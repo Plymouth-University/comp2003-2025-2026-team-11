@@ -1,26 +1,90 @@
 package com.example.corefoodsprototype.ui;
 
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.corefoodsprototype.R;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FoodActivity extends AppCompatActivity {
+
+    private EditText etMealName, etCalories, etTime, etNotes;
+    private Spinner spMealType;
+    private TextView tvMealList;
+    private final List<String> mealsLogged = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_food);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        etMealName = findViewById(R.id.etMealName);
+        etCalories = findViewById(R.id.etCalories);
+        etTime = findViewById(R.id.etTime);
+        etNotes = findViewById(R.id.etNotes);
+        spMealType = findViewById(R.id.spMealType);
+        tvMealList = findViewById(R.id.tvMealListPlaceholder);
+        Button btnSaveMeal = findViewById(R.id.btnSaveMeal);
+
+        setupMealTypeSpinner();
+
+        btnSaveMeal.setOnClickListener(v -> saveMeal());
+    }
+
+    private void setupMealTypeSpinner() {
+        String[] mealTypes = {"Breakfast", "Lunch", "Dinner", "Snack"};
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                mealTypes
+        );
+
+        spMealType.setAdapter(adapter);
+    }
+
+    private void saveMeal() {
+        String name = etMealName.getText().toString().trim();
+        String calories = etCalories.getText().toString().trim();
+        String time = etTime.getText().toString().trim();
+        String mealType = spMealType.getSelectedItem().toString();
+
+        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(calories) || TextUtils.isEmpty(time)) {
+            Toast.makeText(this, "Please fill in meal name, calories and time.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String entry = mealType + " - " + name + " (" + calories + " kcal at " + time + ")";
+        mealsLogged.add(entry);
+
+        updateMealList();
+        clearInputs();
+
+        Toast.makeText(this, "Meal saved.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void updateMealList() {
+        StringBuilder builder = new StringBuilder();
+        for (String meal : mealsLogged) {
+            builder.append("• ").append(meal).append("\n");
+        }
+        tvMealList.setText(builder.toString());
+    }
+
+    private void clearInputs() {
+        etMealName.setText("");
+        etCalories.setText("");
+        etTime.setText("");
+        etNotes.setText("");
     }
 }
