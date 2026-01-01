@@ -13,9 +13,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.example.corefoodsprototype.data.PrototypeDataStore;
 
 public class ExerciseActivity extends AppCompatActivity {
@@ -24,7 +21,6 @@ public class ExerciseActivity extends AppCompatActivity {
     private EditText etDuration, etExerciseTime, etExerciseNotes;
     private TextView tvExerciseList;
 
-    private final List<String> exercisesLogged = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +38,12 @@ public class ExerciseActivity extends AppCompatActivity {
         setupSpinners();
 
         btnSaveExercise.setOnClickListener(v -> saveExercise());
+        renderStoredExercises();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        renderStoredExercises();
     }
 
     private void setupSpinners() {
@@ -96,21 +98,27 @@ public class ExerciseActivity extends AppCompatActivity {
 
         String entry = type + " (" + intensity + ") - " + duration + " mins at " + time
                 + " | ~" + caloriesBurned + " kcal";
-        exercisesLogged.add(entry);
+        PrototypeDataStore.getInstance().addExerciseEntry(entry);
+        renderStoredExercises();
 
-        updateExerciseList();
         clearInputs();
 
         Toast.makeText(this, "Exercise saved.", Toast.LENGTH_SHORT).show();
     }
-
-    private void updateExerciseList() {
+    private void renderStoredExercises() {
         StringBuilder builder = new StringBuilder();
-        for (String ex : exercisesLogged) {
+        for (String ex : PrototypeDataStore.getInstance().getExerciseEntries()) {
             builder.append("• ").append(ex).append("\n");
         }
-        tvExerciseList.setText(builder.toString());
+
+        if (builder.length() == 0) {
+            tvExerciseList.setText("No exercises logged yet.");
+        } else {
+            tvExerciseList.setText(builder.toString());
+        }
     }
+
+
 
     private void clearInputs() {
         etDuration.setText("");

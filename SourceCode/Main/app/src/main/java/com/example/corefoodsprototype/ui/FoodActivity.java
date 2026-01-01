@@ -13,9 +13,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.example.corefoodsprototype.data.PrototypeDataStore;
 
 
@@ -24,7 +21,7 @@ public class FoodActivity extends AppCompatActivity {
     private EditText etMealName, etCalories, etTime, etNotes;
     private Spinner spMealType;
     private TextView tvMealList;
-    private final List<String> mealsLogged = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +39,13 @@ public class FoodActivity extends AppCompatActivity {
         setupMealTypeSpinner();
 
         btnSaveMeal.setOnClickListener(v -> saveMeal());
+        renderStoredMeals();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        renderStoredMeals();
     }
 
     private void setupMealTypeSpinner() {
@@ -81,23 +85,16 @@ public class FoodActivity extends AppCompatActivity {
         }
 
         String entry = mealType + " - " + name + " (" + calValue + " kcal at " + time + ")";
-        mealsLogged.add(entry);
+        PrototypeDataStore.getInstance().addFoodEntry(entry);
+        renderStoredMeals();
 
         PrototypeDataStore.getInstance().addCaloriesConsumed(calValue);
 
-        updateMealList();
         clearInputs();
 
         Toast.makeText(this, "Meal saved.", Toast.LENGTH_SHORT).show();
     }
 
-    private void updateMealList() {
-        StringBuilder builder = new StringBuilder();
-        for (String meal : mealsLogged) {
-            builder.append("• ").append(meal).append("\n");
-        }
-        tvMealList.setText(builder.toString());
-    }
 
     private void clearInputs() {
         etMealName.setText("");
@@ -105,4 +102,12 @@ public class FoodActivity extends AppCompatActivity {
         etTime.setText("");
         etNotes.setText("");
     }
+    private void renderStoredMeals() {
+        StringBuilder builder = new StringBuilder();
+        for (String meal : PrototypeDataStore.getInstance().getFoodEntries()) {
+            builder.append("• ").append(meal).append("\n");
+        }
+        tvMealList.setText(builder.length() == 0 ? "No meals logged yet." : builder.toString());
+    }
+
 }
