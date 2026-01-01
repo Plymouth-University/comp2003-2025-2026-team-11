@@ -1,12 +1,11 @@
 package com.example.corefoodsprototype.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.corefoodsprototype.R;
 
@@ -15,12 +14,22 @@ public class MainSectionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_section);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        Button btnFood = findViewById(R.id.btnFood);
+        Button btnExercise = findViewById(R.id.btnExercise);
+        Button btnCalories = findViewById(R.id.btnCalories);
+
+        btnFood.setOnClickListener(v ->
+                startActivity(new Intent(this, FoodActivity.class))
+        );
+
+        btnExercise.setOnClickListener(v ->
+                startActivity(new Intent(this, ExerciseActivity.class))
+        );
+
+        btnCalories.setOnClickListener(v ->
+                startActivity(new Intent(this, CaloriesActivity.class))
+        );
     }
 }

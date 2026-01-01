@@ -12,6 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CoreFoodsPrototype">
         <activity
+            android:name=".ui.FoodActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CaloriesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ExerciseActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.SettingsActivity"
             android:exported="false" />
         <activity
