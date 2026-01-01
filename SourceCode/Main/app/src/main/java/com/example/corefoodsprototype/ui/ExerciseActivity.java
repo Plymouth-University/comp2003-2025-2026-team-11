@@ -16,6 +16,8 @@ import com.example.corefoodsprototype.R;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.corefoodsprototype.data.PrototypeDataStore;
+
 public class ExerciseActivity extends AppCompatActivity {
 
     private Spinner spExerciseType, spIntensity;
@@ -89,7 +91,11 @@ public class ExerciseActivity extends AppCompatActivity {
             return;
         }
 
-        String entry = type + " (" + intensity + ") - " + duration + " mins at " + time;
+        int caloriesBurned = estimateCaloriesBurned(type, intensity, duration);
+        PrototypeDataStore.getInstance().addCaloriesBurned(caloriesBurned);
+
+        String entry = type + " (" + intensity + ") - " + duration + " mins at " + time
+                + " | ~" + caloriesBurned + " kcal";
         exercisesLogged.add(entry);
 
         updateExerciseList();
@@ -111,4 +117,51 @@ public class ExerciseActivity extends AppCompatActivity {
         etExerciseTime.setText("");
         etExerciseNotes.setText("");
     }
+    private int estimateCaloriesBurned(String type, String intensity, int durationMins) {
+        // Simple prototype estimates.
+        double baseRate;
+
+        switch (type) {
+            case "Running":
+                baseRate = 10.0;
+                break;
+            case "Cycling":
+                baseRate = 8.0;
+                break;
+            case "Swimming":
+                baseRate = 9.0;
+                break;
+            case "Weight Training":
+                baseRate = 6.0;
+                break;
+            case "HIIT":
+                baseRate = 11.0;
+                break;
+            case "Yoga":
+                baseRate = 4.0;
+                break;
+            case "Walking":
+                baseRate = 5.0;
+                break;
+            default:
+                baseRate = 6.0; // "Other"
+                break;
+        }
+
+        double intensityMultiplier;
+        switch (intensity) {
+            case "High":
+                intensityMultiplier = 1.3;
+                break;
+            case "Low":
+                intensityMultiplier = 0.8;
+                break;
+            default:
+                intensityMultiplier = 1.0; // Medium
+                break;
+        }
+
+        return (int) Math.round(baseRate * intensityMultiplier * durationMins);
+    }
+
 }

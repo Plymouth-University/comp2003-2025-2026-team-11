@@ -11,13 +11,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
 
+import com.example.corefoodsprototype.data.PrototypeDataStore;
+
 public class CaloriesActivity extends AppCompatActivity {
 
     private EditText etDailyTarget;
     private TextView tvConsumed, tvBurned, tvNet, tvNotes;
 
-    private int prototypeConsumed = 1200;
-    private int prototypeBurned = 350;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshFromStore(null);
+    }
+
+    private void refreshFromStore(Integer target) {
+        int consumed = PrototypeDataStore.getInstance().getTotalCaloriesConsumed();
+        int burned = PrototypeDataStore.getInstance().getTotalCaloriesBurned();
+        renderTotals(consumed, burned, target);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +45,7 @@ public class CaloriesActivity extends AppCompatActivity {
         Button btnRecalculate = findViewById(R.id.btnRecalculate);
         Button btnResetDay = findViewById(R.id.btnResetDay);
 
-        renderTotals(prototypeConsumed, prototypeBurned, null);
+        refreshFromStore(null);
 
         btnRecalculate.setOnClickListener(v -> recalculate());
         btnResetDay.setOnClickListener(v -> resetDay());
@@ -59,16 +71,16 @@ public class CaloriesActivity extends AppCompatActivity {
             return;
         }
 
-        renderTotals(prototypeConsumed, prototypeBurned, target);
+        refreshFromStore(target);
         Toast.makeText(this, "Recalculated.", Toast.LENGTH_SHORT).show();
     }
 
     private void resetDay() {
         etDailyTarget.setText("");
-        prototypeConsumed = 0;
-        prototypeBurned = 0;
 
-        renderTotals(prototypeConsumed, prototypeBurned, null);
+        PrototypeDataStore.getInstance().resetDay();
+        refreshFromStore(null);
+
         tvNotes.setText("Day reset. Log meals and exercises again to rebuild totals.");
         Toast.makeText(this, "Day reset.", Toast.LENGTH_SHORT).show();
     }

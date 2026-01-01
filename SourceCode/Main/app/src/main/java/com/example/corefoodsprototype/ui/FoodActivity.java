@@ -16,6 +16,9 @@ import com.example.corefoodsprototype.R;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.corefoodsprototype.data.PrototypeDataStore;
+
+
 public class FoodActivity extends AppCompatActivity {
 
     private EditText etMealName, etCalories, etTime, etNotes;
@@ -64,8 +67,23 @@ public class FoodActivity extends AppCompatActivity {
             return;
         }
 
-        String entry = mealType + " - " + name + " (" + calories + " kcal at " + time + ")";
+        int calValue;
+        try {
+            calValue = Integer.parseInt(calories);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Calories must be a number.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (calValue <= 0) {
+            Toast.makeText(this, "Calories must be greater than 0.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String entry = mealType + " - " + name + " (" + calValue + " kcal at " + time + ")";
         mealsLogged.add(entry);
+
+        PrototypeDataStore.getInstance().addCaloriesConsumed(calValue);
 
         updateMealList();
         clearInputs();
