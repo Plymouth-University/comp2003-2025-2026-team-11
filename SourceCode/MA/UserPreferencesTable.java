@@ -1,5 +1,10 @@
 package com.example.corefoodsdatabase;
 
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+
 public class UserPreferencesTable {
 
     public static final String TABLE_NAME = "UserPreferences";
@@ -19,4 +24,31 @@ public class UserPreferencesTable {
                     COL_COLOR_BLIND + " TEXT," +
                     "FOREIGN KEY (" + COL_EMAIL + ") REFERENCES User(Email)" +
                     ");";
+
+    public static long insert(SQLiteDatabase db, String email, String textSize,
+                              String theme, String mode, String colourBlind) {
+        ContentValues values = new ContentValues();
+        values.put(COL_EMAIL, email);
+        values.put(COL_TEXT_SIZE, textSize);
+        values.put(COL_THEME, theme);
+        values.put(COL_LIGHT_DARK, mode);
+        values.put(COL_COLOR_BLIND, colourBlind);
+        return db.insert(TABLE_NAME, null, values);
+    }
+
+    public static Cursor get(SQLiteDatabase db, String email) {
+        return db.query(TABLE_NAME, null, COL_EMAIL + "=?",
+                new String[]{email}, null, null, null);
+    }
+
+    public static int update(SQLiteDatabase db, String email, ContentValues values) {
+        return db.update(TABLE_NAME, values, COL_EMAIL + "=?",
+                new String[]{email});
+    }
+
+    public static int delete(SQLiteDatabase db, String email) {
+        return db.delete(TABLE_NAME, COL_EMAIL + "=?",
+                new String[]{email});
+    }
 }
+
