@@ -3,11 +3,11 @@ package com.example.corefoodsprototype.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
+import com.example.corefoodsprototype.data.DatabaseHelper;
 
 public class MainSectionActivity extends AppCompatActivity {
 
@@ -19,6 +19,9 @@ public class MainSectionActivity extends AppCompatActivity {
         Button btnFood = findViewById(R.id.btnFood);
         Button btnExercise = findViewById(R.id.btnExercise);
         Button btnCalories = findViewById(R.id.btnCalories);
+
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        dbHelper.createSampleUserForTesting();
 
         btnFood.setOnClickListener(v ->
                 startActivity(new Intent(this, FoodActivity.class))
