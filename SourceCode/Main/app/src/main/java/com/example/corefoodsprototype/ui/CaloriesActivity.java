@@ -1,5 +1,6 @@
 package com.example.corefoodsprototype.ui;
 
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -10,31 +11,38 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
-
-import com.example.corefoodsprototype.data.PrototypeDataStore;
+import com.example.corefoodsprototype.data.DatabaseHelper;
+import com.example.corefoodsprototype.data.ExerciseLogTable;
+import com.example.corefoodsprototype.data.FoodLogTable;
 
 public class CaloriesActivity extends AppCompatActivity {
 
     private EditText etDailyTarget;
     private TextView tvConsumed, tvBurned, tvNet, tvNotes;
+    private DatabaseHelper dbHelper;
+
+    // Hardcoded test user email. In a real app, this would come from a login session.
+    private final String TEST_USER_EMAIL = "test@example.com";
 
     @Override
     protected void onResume() {
         super.onResume();
-        refreshFromStore(null);
+        refreshFromDatabase(null);
     }
 
-    private void refreshFromStore(Integer target) {
-        int consumed = PrototypeDataStore.getInstance().getTotalCaloriesConsumed();
-        int burned = PrototypeDataStore.getInstance().getTotalCaloriesBurned();
+    private void refreshFromDatabase(Integer target) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, TEST_USER_EMAIL);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, TEST_USER_EMAIL);
         renderTotals(consumed, burned, target);
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calories);
+
+        dbHelper = new DatabaseHelper(this);
 
         etDailyTarget = findViewById(R.id.etDailyTarget);
         tvConsumed = findViewById(R.id.tvConsumed);
@@ -45,7 +53,7 @@ public class CaloriesActivity extends AppCompatActivity {
         Button btnRecalculate = findViewById(R.id.btnRecalculate);
         Button btnResetDay = findViewById(R.id.btnResetDay);
 
-        refreshFromStore(null);
+        refreshFromDatabase(null);
 
         btnRecalculate.setOnClickListener(v -> recalculate());
         btnResetDay.setOnClickListener(v -> resetDay());
@@ -71,15 +79,18 @@ public class CaloriesActivity extends AppCompatActivity {
             return;
         }
 
-        refreshFromStore(target);
+        refreshFromDatabase(target);
         Toast.makeText(this, "Recalculated.", Toast.LENGTH_SHORT).show();
     }
 
     private void resetDay() {
         etDailyTarget.setText("");
 
-        PrototypeDataStore.getInstance().resetDay();
-        refreshFromStore(null);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        FoodLogTable.deleteAllLogsForUser(db, TEST_USER_EMAIL);
+        ExerciseLogTable.deleteAllLogsForUser(db, TEST_USER_EMAIL);
+
+        refreshFromDatabase(null);
 
         tvNotes.setText("Day reset. Log meals and exercises again to rebuild totals.");
         Toast.makeText(this, "Day reset.", Toast.LENGTH_SHORT).show();
@@ -98,6 +109,9 @@ public class CaloriesActivity extends AppCompatActivity {
                     ? ("You are about " + delta + " kcal under your target.")
                     : ("You are about " + Math.abs(delta) + " kcal over your target.");
             tvNotes.setText(status);
+        } else {
+            // Clear the notes if there's no target
+            tvNotes.setText("");
         }
     }
 }
