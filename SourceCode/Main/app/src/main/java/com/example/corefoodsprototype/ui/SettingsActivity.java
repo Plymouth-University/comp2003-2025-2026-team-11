@@ -1,5 +1,6 @@
 package com.example.corefoodsprototype.ui;
 
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -10,9 +11,17 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
-import com.example.corefoodsprototype.data.PrototypeDataStore;
+import com.example.corefoodsprototype.data.DatabaseHelper;
+import com.example.corefoodsprototype.data.ExerciseLogTable;
+import com.example.corefoodsprototype.data.FoodLogTable;
+import com.example.corefoodsprototype.data.UserTable;
 
 public class SettingsActivity extends AppCompatActivity {
+
+
+    private DatabaseHelper dbHelper;
+    // Hardcoded test user email. In a real app, this would come from a login session.
+    private final String TEST_USER_EMAIL = "test@example.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +52,10 @@ public class SettingsActivity extends AppCompatActivity {
         );
 
         btnClearData.setOnClickListener(v -> {
-            PrototypeDataStore.getInstance().resetDay();
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            // Delete all food and exercise logs for the current user
+            FoodLogTable.deleteAllLogsForUser(db, TEST_USER_EMAIL);
+            ExerciseLogTable.deleteAllLogsForUser(db, TEST_USER_EMAIL);
             Toast.makeText(this, "Today’s data cleared.", Toast.LENGTH_SHORT).show();
         });
 
@@ -52,8 +64,9 @@ public class SettingsActivity extends AppCompatActivity {
                         .setTitle("Delete account")
                         .setMessage("This will remove all local prototype data. Are you sure?")
                         .setPositiveButton("Delete", (dialog, which) -> {
-                            PrototypeDataStore.getInstance().resetDay();
-                            Toast.makeText(this, "Account deleted.", Toast.LENGTH_SHORT).show();
+                            SQLiteDatabase db = dbHelper.getWritableDatabase();
+                            // Delete the user from the UserTable. Cascading delete will handle the rest.
+                            UserTable.delete(db, TEST_USER_EMAIL);
                         })
                         .setNegativeButton("Cancel", null)
                         .show()
