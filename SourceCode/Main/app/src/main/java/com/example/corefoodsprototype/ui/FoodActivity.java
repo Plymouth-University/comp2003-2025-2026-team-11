@@ -1,5 +1,7 @@
 package com.example.corefoodsprototype.ui;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.ArrayAdapter;
@@ -8,25 +10,27 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.example.corefoodsprototype.R;
-
-import com.example.corefoodsprototype.data.PrototypeDataStore;
-
+import com.example.corefoodsprototype.data.DatabaseHelper;
+import com.example.corefoodsprototype.data.FoodLogTable;
 
 public class FoodActivity extends AppCompatActivity {
 
     private EditText etMealName, etCalories, etTime, etNotes;
     private Spinner spMealType;
     private TextView tvMealList;
+    private DatabaseHelper dbHelper;
 
+    // Hardcoded test user email. In a real app, this would come from a login session.
+    private final String TEST_USER_EMAIL = "test@example.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_food);
+
+        dbHelper = new DatabaseHelper(this);
 
         etMealName = findViewById(R.id.etMealName);
         etCalories = findViewById(R.id.etCalories);
@@ -37,7 +41,6 @@ public class FoodActivity extends AppCompatActivity {
         Button btnSaveMeal = findViewById(R.id.btnSaveMeal);
 
         setupMealTypeSpinner();
-
         btnSaveMeal.setOnClickListener(v -> saveMeal());
         renderStoredMeals();
     }
@@ -50,30 +53,25 @@ public class FoodActivity extends AppCompatActivity {
 
     private void setupMealTypeSpinner() {
         String[] mealTypes = {"Breakfast", "Lunch", "Dinner", "Snack"};
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                mealTypes
-        );
-
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, mealTypes);
         spMealType.setAdapter(adapter);
     }
 
     private void saveMeal() {
         String name = etMealName.getText().toString().trim();
-        String calories = etCalories.getText().toString().trim();
+        String caloriesStr = etCalories.getText().toString().trim();
         String time = etTime.getText().toString().trim();
+        String notes = etNotes.getText().toString().trim();
         String mealType = spMealType.getSelectedItem().toString();
 
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(calories) || TextUtils.isEmpty(time)) {
+        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(caloriesStr) || TextUtils.isEmpty(time)) {
             Toast.makeText(this, "Please fill in meal name, calories and time.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         int calValue;
         try {
-            calValue = Integer.parseInt(calories);
+            calValue = Integer.parseInt(caloriesStr);
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Calories must be a number.", Toast.LENGTH_SHORT).show();
             return;
@@ -84,17 +82,13 @@ public class FoodActivity extends AppCompatActivity {
             return;
         }
 
-        String entry = mealType + " - " + name + " (" + calValue + " kcal at " + time + ")";
-        PrototypeDataStore.getInstance().addFoodEntry(entry);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        FoodLogTable.insert(db, TEST_USER_EMAIL, mealType, name, calValue, time, notes);
+
         renderStoredMeals();
-
-        PrototypeDataStore.getInstance().addCaloriesConsumed(calValue);
-
         clearInputs();
-
         Toast.makeText(this, "Meal saved.", Toast.LENGTH_SHORT).show();
     }
-
 
     private void clearInputs() {
         etMealName.setText("");
@@ -102,12 +96,33 @@ public class FoodActivity extends AppCompatActivity {
         etTime.setText("");
         etNotes.setText("");
     }
+
     private void renderStoredMeals() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = FoodLogTable.getLogsForUser(db, TEST_USER_EMAIL);
+
         StringBuilder builder = new StringBuilder();
-        for (String meal : PrototypeDataStore.getInstance().getFoodEntries()) {
-            builder.append("• ").append(meal).append("\n");
+        if (cursor != null && cursor.moveToFirst()) {
+            int mealTypeIndex = cursor.getColumnIndex(FoodLogTable.COL_MEAL_TYPE);
+            int mealNameIndex = cursor.getColumnIndex(FoodLogTable.COL_MEAL_NAME);
+            int caloriesIndex = cursor.getColumnIndex(FoodLogTable.COL_CALORIES);
+            int timeIndex = cursor.getColumnIndex(FoodLogTable.COL_TIME);
+
+            do {
+                String mealType = cursor.getString(mealTypeIndex);
+                String mealName = cursor.getString(mealNameIndex);
+                int calories = cursor.getInt(caloriesIndex);
+                String time = cursor.getString(timeIndex);
+
+                builder.append("• ")
+                        .append(mealType).append(" - ")
+                        .append(mealName).append(" (")
+                        .append(calories).append(" kcal at ")
+                        .append(time).append(")\n");
+            } while (cursor.moveToNext());
+            cursor.close();
         }
+
         tvMealList.setText(builder.length() == 0 ? "No meals logged yet." : builder.toString());
     }
-
 }
