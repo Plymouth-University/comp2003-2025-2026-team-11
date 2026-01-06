@@ -1,5 +1,7 @@
 package com.example.corefoodsprototype.ui;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -9,18 +11,26 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.corefoodsprototype.R;
-import com.example.corefoodsprototype.data.PrototypeDataStore;
+import com.example.corefoodsprototype.data.DatabaseHelper;
+import com.example.corefoodsprototype.data.ExerciseLogTable;
+import com.example.corefoodsprototype.data.FoodLogTable;
 
 public class ChatBotActivity extends AppCompatActivity {
 
     private TextView tvContext;
     private TextView tvTranscript;
     private EditText etMessage;
+    private DatabaseHelper dbHelper;
+
+    // Hardcoded test user email. In a real app, this would come from a login session.
+    private final String TEST_USER_EMAIL = "test@example.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_bot);
+
+        dbHelper = new DatabaseHelper(this);
 
         tvContext = findViewById(R.id.tvContext);
         tvTranscript = findViewById(R.id.tvChatTranscript);
@@ -39,8 +49,9 @@ public class ChatBotActivity extends AppCompatActivity {
     }
 
     private void refreshContext() {
-        int consumed = PrototypeDataStore.getInstance().getTotalCaloriesConsumed();
-        int burned = PrototypeDataStore.getInstance().getTotalCaloriesBurned();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, TEST_USER_EMAIL);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, TEST_USER_EMAIL);
         int net = consumed - burned;
 
         tvContext.setText("Today: Consumed " + consumed + " kcal • Burned " + burned + " kcal • Net " + net + " kcal");
@@ -62,8 +73,9 @@ public class ChatBotActivity extends AppCompatActivity {
     }
 
     private String generatePrototypeReply(String userMsg) {
-        int consumed = PrototypeDataStore.getInstance().getTotalCaloriesConsumed();
-        int burned = PrototypeDataStore.getInstance().getTotalCaloriesBurned();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, TEST_USER_EMAIL);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, TEST_USER_EMAIL);
         int net = consumed - burned;
 
         String lower = userMsg.toLowerCase();
