@@ -157,8 +157,3 @@ public class ExerciseActivity extends AppCompatActivity {
         return (int) Math.round(baseRate * intensityMultiplier * durationMins);
     }
 }
-
-        return (int) Math.round(baseRate * intensityMultiplier * durationMins);
-    }
-
-}
