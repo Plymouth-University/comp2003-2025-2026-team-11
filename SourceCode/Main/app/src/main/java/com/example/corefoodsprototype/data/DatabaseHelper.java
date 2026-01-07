@@ -53,12 +53,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // Insert the sample user
         UserTable.insert(db,
                 testEmail,
-                "password123", // Dummy password
-                "Test User",
-                175.0, // Height in cm
-                70.0,  // Weight in kg
-                "2000-01-01", // Date of Birth
-                "Other" // Gender
+                "password123" // Dummy password
         );
     }
 }
