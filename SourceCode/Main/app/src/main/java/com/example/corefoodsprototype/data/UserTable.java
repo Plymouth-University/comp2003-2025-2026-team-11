@@ -13,7 +13,7 @@ public class UserTable {
     public static final String CREATE_TABLE =
             "CREATE TABLE " + TABLE_NAME + " (" +
                     COL_EMAIL + " TEXT PRIMARY KEY," +
-                    COL_PASSWORD + " TEXT," +
+                    COL_PASSWORD + " TEXT" +
                     ");";
 
     // CREATE
