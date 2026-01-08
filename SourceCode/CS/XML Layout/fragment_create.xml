@@ -28,6 +28,24 @@
         app:layout_constraintTop_toBottomOf="@id/text_app_name"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="#1F1F1F"
+            app:cardCornerRadius="8dp">
+
+            <TextView
+                android:id="@+id/login_info_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="Welcome to COREFOODS. Please enter your details below to create your account."
+                android:textColor="#BBBBBB"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center" /> </androidx.cardview.widget.CardView>
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -57,34 +75,12 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <Button
-            android:id="@+id/button_login"
+            android:id="@+id/button_register"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Login"
+            android:text="Create your account"
             android:backgroundTint="#03DAC5"
             android:textColor="#121212" />
-
-        <Button
-            android:id="@+id/button_forgot_password"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="8dp"
-            android:text="Forgot Password?"
-            android:textColor="#BBBBBB"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btn_go_to_register"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Don't have an account? Sign Up"
-            android:textColor="#03DAC5"
-            android:textAllCaps="false" />
-
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
