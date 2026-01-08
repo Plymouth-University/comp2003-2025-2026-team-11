@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "96429470754",
+    "project_id": "corefood-single-task",
+    "storage_bucket": "corefood-single-task.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:96429470754:android:e2d9e326836d1da703467b",
+        "android_client_info": {
+          "package_name": "com.example.corefood"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlAH3vq8TwqBUD7vi0iqK0u0ifnRUxh2Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
