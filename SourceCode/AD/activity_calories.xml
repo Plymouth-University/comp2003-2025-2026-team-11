@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calories Summary"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="This summary is based on your logged meals and exercises."
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Daily calorie target (kcal)" />
+
+        <EditText
+            android:id="@+id/etDailyTarget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g., 2000"
+            android:inputType="number"
+            android:padding="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Today’s totals"
+            android:textStyle="bold"
+            android:paddingTop="18dp"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvConsumed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Calories consumed: 0 kcal"
+            android:padding="10dp" />
+
+        <TextView
+            android:id="@+id/tvBurned"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Calories burned (estimated): 0 kcal"
+            android:padding="10dp" />
+
+        <TextView
+            android:id="@+id/tvNet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Net balance: 0 kcal"
+            android:textStyle="bold"
+            android:padding="10dp" />
+
+        <Button
+            android:id="@+id/btnRecalculate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Recalculate" />
+
+        <Button
+            android:id="@+id/btnResetDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Reset Day" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notes"
+            android:textStyle="bold"
+            android:paddingTop="18dp"
+            android:paddingBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tip: log your meals and exercises first, then return here to see your day’s overview."
+            android:padding="12dp" />
+
+    </LinearLayout>
+</ScrollView>
