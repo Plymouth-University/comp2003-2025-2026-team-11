@@ -1,0 +1,22 @@
+package com.example.firestoredatabasetest;
+
+public class ExerciseLog {
+
+    // Variables for storing data
+    private String EL_EXERCISE_TYPE, El_INTENSITY, EL_DURATION_MINS, EL_CALORIES_BURNED, EL_TIME, EL_NOTES;
+
+    public ExerciseLog() {
+        // Empty constructor required for Firebase
+    }
+
+    // constructor for variables
+    public ExerciseLog(String COL_EXERCISE_TYPE, String COL_INTENSITY, String COL_DURATION_MINS, String COL_CALORIES_BURNED, String COL_TIME, String COL_NOTES) {
+        this.EL_EXERCISE_TYPE = COL_EXERCISE_TYPE;
+        this.El_INTENSITY = COL_INTENSITY;
+        this.EL_DURATION_MINS = COL_DURATION_MINS;
+        this.EL_CALORIES_BURNED = COL_CALORIES_BURNED;
+        this.EL_TIME = COL_TIME;
+        this.EL_NOTES = COL_NOTES;
+    }
+
+}
