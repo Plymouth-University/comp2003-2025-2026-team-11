@@ -18,4 +18,10 @@ public class FoodLog {
         this.FL_NOTES = COL_NOTES;
     }
 
+    public String getFL_MEAL_TYPE() { return FL_MEAL_TYPE; }
+    public String getFL_MEAL_NAME() { return FL_MEAL_NAME; }
+    public String getFL_CALORIES() { return FL_CALORIES; }
+    public String getFL_TIME() { return FL_TIME; }
+    public String getFL_NOTES() { return FL_NOTES; }
 }
+
