@@ -19,4 +19,11 @@ public class ExerciseLog {
         this.EL_NOTES = COL_NOTES;
     }
 
+    public String getEL_EXERCISE_TYPE() { return EL_EXERCISE_TYPE; }
+    public String getEl_INTENSITY() { return El_INTENSITY; }
+    public String getEL_DURATION_MINS() { return EL_DURATION_MINS; }
+    public String getEL_CALORIES_BURNED() { return EL_CALORIES_BURNED; }
+    public String getEL_TIME() { return EL_TIME; }
+    public String getEL_NOTES() { return EL_NOTES; }
 }
+
