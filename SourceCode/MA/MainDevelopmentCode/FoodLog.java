@@ -23,5 +23,12 @@ public class FoodLog {
     public String getFL_CALORIES() { return FL_CALORIES; }
     public String getFL_TIME() { return FL_TIME; }
     public String getFL_NOTES() { return FL_NOTES; }
+
+    public void setFL_MEAL_TYPE(String FL_MEAL_TYPE) { this.FL_MEAL_TYPE = FL_MEAL_TYPE; }
+    public void setFL_MEAL_NAME(String FL_MEAL_NAME) { this.FL_MEAL_NAME = FL_MEAL_NAME; }
+    public void setFL_CALORIES(String FL_CALORIES) { this.FL_CALORIES = FL_CALORIES; }
+    public void setFL_TIME(String FL_TIME) { this.FL_TIME = FL_TIME; }
+    public void setFL_NOTES(String FL_NOTES) { this.FL_NOTES = FL_NOTES; }
 }
+
 
