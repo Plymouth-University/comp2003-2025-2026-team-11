@@ -256,18 +256,6 @@
             android:layout_marginBottom="8dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_change_email"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="CHANGE EMAIL"
-            android:textColor="#FFFFFF"
-            android:gravity="start|center_vertical"
-            android:paddingStart="20dp"
-            app:backgroundTint="#1A1A1A"
-            app:cornerRadius="12dp"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_logout"
             android:layout_width="match_parent"
             android:layout_height="60dp"
