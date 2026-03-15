@@ -1,16 +1,17 @@
-package com.example.firestoredatabasetest;
+package com.example.corefood;
 
 public class FoodLog {
 
     // Variables for storing data
-    private String FL_MEAL_TYPE, FL_MEAL_NAME, FL_CALORIES, FL_TIME, FL_NOTES;
+    private String FL_USER, FL_MEAL_TYPE, FL_MEAL_NAME, FL_CALORIES, FL_TIME, FL_NOTES;
 
     public FoodLog() {
         // Empty constructor required for Firebase
     }
 
     // constructor for variables
-    public FoodLog(String COL_MEAL_TYPE, String COL_MEAL_NAME, String COL_CALORIES, String COL_TIME, String COL_NOTES) {
+    public FoodLog(String COL_USER, String COL_MEAL_TYPE, String COL_MEAL_NAME, String COL_CALORIES, String COL_TIME, String COL_NOTES) {
+        this.FL_USER = COL_USER;
         this.FL_MEAL_TYPE = COL_MEAL_TYPE;
         this.FL_MEAL_NAME = COL_MEAL_NAME;
         this.FL_CALORIES = COL_CALORIES;
@@ -18,17 +19,20 @@ public class FoodLog {
         this.FL_NOTES = COL_NOTES;
     }
 
+    public String getFL_USER() { return FL_USER; }
     public String getFL_MEAL_TYPE() { return FL_MEAL_TYPE; }
     public String getFL_MEAL_NAME() { return FL_MEAL_NAME; }
     public String getFL_CALORIES() { return FL_CALORIES; }
     public String getFL_TIME() { return FL_TIME; }
     public String getFL_NOTES() { return FL_NOTES; }
 
+    public void setFL_USER(String FL_USER) { this.FL_USER = FL_USER; }
     public void setFL_MEAL_TYPE(String FL_MEAL_TYPE) { this.FL_MEAL_TYPE = FL_MEAL_TYPE; }
     public void setFL_MEAL_NAME(String FL_MEAL_NAME) { this.FL_MEAL_NAME = FL_MEAL_NAME; }
     public void setFL_CALORIES(String FL_CALORIES) { this.FL_CALORIES = FL_CALORIES; }
     public void setFL_TIME(String FL_TIME) { this.FL_TIME = FL_TIME; }
     public void setFL_NOTES(String FL_NOTES) { this.FL_NOTES = FL_NOTES; }
+
 }
 
 
