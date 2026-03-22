@@ -6,84 +6,115 @@
     android:background="#121212">
 
     <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_above="@id/bottom_navigation"
-    android:orientation="vertical"
-    android:padding="16dp">
+        android:id="@+id/chat_content_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation"
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
             android:id="@+id/tvChatTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AI ChatBot"
+            android:text="CoreFoods AI Assistant"
             android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:paddingBottom="6dp"/>
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvChatSubtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Prototype chatbot. Suggestions are informational only."
-            android:textColor="#FFFFFF"
-            android:paddingBottom="10dp"/>
+            android:layout_marginTop="6dp"
+            android:text="Personalised food, calorie, and exercise guidance for your current progress."
+            android:textColor="#BDBDBD"
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/tvContext"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="#1E2A2A"
+            android:padding="12dp"
             android:text="Today: Consumed 0 kcal • Burned 0 kcal • Net 0 kcal"
             android:textColor="#FFFFFF"
-            android:padding="10dp"/>
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/tvChatTranscript"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:text="AI: Hi! Ask me about diet or exercise.\n"
+            android:layout_marginTop="14dp"
+            android:background="#1C1C1C"
+            android:fadeScrollbars="false"
+            android:gravity="top|start"
+            android:overScrollMode="always"
+            android:padding="14dp"
+            android:scrollbars="vertical"
+            android:text="AI: Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
             android:textColor="#FFFFFF"
-            android:padding="10dp"
-            android:background="#1A000000"
-            android:scrollbars="vertical" />
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp" />
 
         <LinearLayout
+            android:id="@+id/input_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="#1C1C1C"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingTop="10dp">
+            android:padding="10dp">
 
             <EditText
                 android:id="@+id/etMessage"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="Type a message…"
+                android:background="@android:color/transparent"
+                android:hint="Ask about food, calories, or exercise..."
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:minHeight="48dp"
+                android:padding="8dp"
                 android:textColor="#FFFFFF"
-                android:inputType="text"
-                android:padding="12dp" />
+                android:textColorHint="#9E9E9E" />
 
             <Button
                 android:id="@+id/btnSend"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Send" />
+                android:layout_height="48dp"
+                android:layout_marginStart="10dp"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="Send"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF" />
 
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvChatDisclaimer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Informational support only. Not medical advice."
+            android:textColor="#9E9E9E"
+            android:textSize="12sp" />
+
     </LinearLayout>
 
-    <!-- Dashboard -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:background="#1F1F1F"
         app:itemIconTint="#03DAC5"
         app:itemTextColor="#FFFFFF"
-        app:menu="@menu/bottom_nav_menu"
-        android:layout_alignParentBottom="true"/>
+        app:menu="@menu/bottom_nav_menu" />
 
 </RelativeLayout>

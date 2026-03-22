@@ -1,31 +1,32 @@
 package com.example.corefood;
 
 import android.content.Intent;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.text.method.ScrollingMovementMethod;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.corefood.R;
-import com.example.corefood.DatabaseHelper;
-import com.example.corefood.ExerciseLogTable;
-import com.example.corefood.FoodLogTable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class ChatBotActivity extends AppCompatActivity {
+
+    private static final String FALLBACK_TEST_EMAIL = "test@example.com";
 
     private TextView tvContext;
     private TextView tvTranscript;
     private EditText etMessage;
+    private Button btnSend;
     private DatabaseHelper dbHelper;
 
-    // Hardcoded test user email. In a real app, this would come from a login session.
-    private final String TEST_USER_EMAIL = "test@example.com";
+    private String currentUserEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,9 +38,25 @@ public class ChatBotActivity extends AppCompatActivity {
         tvContext = findViewById(R.id.tvContext);
         tvTranscript = findViewById(R.id.tvChatTranscript);
         etMessage = findViewById(R.id.etMessage);
-        Button btnSend = findViewById(R.id.btnSend);
+        btnSend = findViewById(R.id.btnSend);
 
-        //Dashboard Navigation
+        tvTranscript.setMovementMethod(new ScrollingMovementMethod());
+
+        currentUserEmail = resolveBestUserEmail();
+        setupBottomNavigation();
+        refreshContext();
+
+        btnSend.setOnClickListener(v -> sendMessage());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        currentUserEmail = resolveBestUserEmail();
+        refreshContext();
+    }
+
+    private void setupBottomNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setSelectedItemId(R.id.ai_menu);
 
@@ -69,24 +86,42 @@ public class ChatBotActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             }
+
             return false;
         });
-
-        refreshContext();
-
-        btnSend.setOnClickListener(v -> sendMessage());
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        refreshContext();
+    private String resolveBestUserEmail() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        String firebaseEmail = firebaseUser != null ? firebaseUser.getEmail() : null;
+
+        if (!TextUtils.isEmpty(firebaseEmail) && hasAnyLocalData(firebaseEmail)) {
+            return firebaseEmail;
+        }
+
+        if (hasAnyLocalData(FALLBACK_TEST_EMAIL)) {
+            Toast.makeText(this, "Using local test data for chatbot context", Toast.LENGTH_SHORT).show();
+            return FALLBACK_TEST_EMAIL;
+        }
+
+        if (!TextUtils.isEmpty(firebaseEmail)) {
+            return firebaseEmail;
+        }
+
+        return FALLBACK_TEST_EMAIL;
+    }
+
+    private boolean hasAnyLocalData(String email) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, email);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, email);
+        return consumed > 0 || burned > 0;
     }
 
     private void refreshContext() {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, TEST_USER_EMAIL);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, TEST_USER_EMAIL);
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, currentUserEmail);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, currentUserEmail);
         int net = consumed - burned;
 
         tvContext.setText("Today: Consumed " + consumed + " kcal • Burned " + burned + " kcal • Net " + net + " kcal");
@@ -94,57 +129,132 @@ public class ChatBotActivity extends AppCompatActivity {
 
     private void sendMessage() {
         String userMsg = etMessage.getText().toString().trim();
-        if (TextUtils.isEmpty(userMsg)) return;
+        if (TextUtils.isEmpty(userMsg)) {
+            return;
+        }
 
         appendLine("You: " + userMsg);
         etMessage.setText("");
+        setSendingState(true);
 
-        String aiReply = generatePrototypeReply(userMsg);
-        appendLine("AI: " + aiReply);
+        String prompt = buildPrompt(userMsg);
+
+        GeminiApiHelper.generateReply(prompt, new GeminiApiHelper.GeminiCallback() {
+            @Override
+            public void onSuccess(String reply) {
+                runOnUiThread(() -> {
+                    appendLine("AI: " + reply);
+                    setSendingState(false);
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                runOnUiThread(() -> {
+                    String fallbackReply = generatePrototypeReply(userMsg);
+                    appendLine("AI: " + fallbackReply);
+                    setSendingState(false);
+
+                    Toast.makeText(
+                            ChatBotActivity.this,
+                            "AI unavailable. Showing prototype response.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
+            }
+        });
+    }
+
+    private void setSendingState(boolean isSending) {
+        btnSend.setEnabled(!isSending);
+        btnSend.setText(isSending ? "Sending..." : "Send");
     }
 
     private void appendLine(String line) {
         tvTranscript.append(line + "\n\n");
+
+        tvTranscript.post(() -> {
+            if (tvTranscript.getLayout() == null) {
+                return;
+            }
+
+            int scrollAmount = tvTranscript.getLayout().getLineTop(tvTranscript.getLineCount()) - tvTranscript.getHeight();
+
+            if (scrollAmount > 0) {
+                tvTranscript.scrollTo(0, scrollAmount);
+            } else {
+                tvTranscript.scrollTo(0, 0);
+            }
+        });
+    }
+
+    private String buildPrompt(String userMsg) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, currentUserEmail);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, currentUserEmail);
+        int net = consumed - burned;
+
+        String transcriptSnapshot = tvTranscript.getText().toString();
+        if (transcriptSnapshot.length() > 800) {
+            transcriptSnapshot = transcriptSnapshot.substring(transcriptSnapshot.length() - 800);
+        }
+
+        return "You are the CoreFoods chatbot, an AI assistant for a student fitness app prototype. "
+                + "Help users with food, calorie balance, exercise, motivation, and general fitness guidance. "
+                + "Use the provided user data when relevant. "
+                + "Do not invent user facts that are not available. "
+                + "Do not provide medical diagnosis or treatment advice. "
+                + "If the topic becomes medical or risky, briefly say the user should consult a qualified professional. "
+                + "Keep replies natural, useful, and reasonably concise for a mobile app.\n\n"
+
+                + "User context:\n"
+                + "- Calories consumed today: " + consumed + "\n"
+                + "- Calories burned today: " + burned + "\n"
+                + "- Net calories today: " + net + "\n\n"
+
+                + "Recent chat:\n"
+                + transcriptSnapshot + "\n\n"
+
+                + "User question:\n"
+                + userMsg;
     }
 
     private String generatePrototypeReply(String userMsg) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, TEST_USER_EMAIL);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, TEST_USER_EMAIL);
+        int consumed = FoodLogTable.getTotalCaloriesForUser(db, currentUserEmail);
+        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, currentUserEmail);
         int net = consumed - burned;
 
         String lower = userMsg.toLowerCase();
 
-        // Basic topic detection
         if (lower.contains("diet") || lower.contains("food") || lower.contains("eat")) {
             if (net > 2000) {
-                return "Your net intake looks quite high today. If your goal is fat loss, you could reduce portion sizes or swap one meal for something lighter (e.g., lean protein + vegetables).";
+                return "Your net intake looks quite high today. If your goal is fat loss, you could reduce portion sizes or choose a lighter meal with lean protein and vegetables.";
             } else if (net > 0) {
-                return "You’re currently in a net surplus today. If you want to maintain, try balancing with a lighter dinner or a higher-protein snack.";
+                return "You’re currently in a net surplus today. If your goal is maintenance, a lighter meal or higher-protein option could help balance the day.";
             } else {
-                return "You’re currently in a net deficit today. Make sure you’re still eating enough protein and staying hydrated.";
+                return "You’re currently in a net deficit today. Make sure you still get enough protein, fluids, and overall nutrition.";
             }
         }
 
         if (lower.contains("exercise") || lower.contains("workout") || lower.contains("burn")) {
             if (burned < 200) {
-                return "If you have time, a short walk or a light workout could help increase your burned calories for today.";
+                return "If you have time, a short walk or light workout could help increase your calories burned today.";
             } else {
-                return "Nice work staying active today. If you’re training again, consider stretching or a lighter session for recovery.";
+                return "Nice work staying active today. If you train again, consider recovery, mobility work, or a lighter session.";
             }
         }
 
         if (lower.contains("calorie") || lower.contains("deficit") || lower.contains("surplus")) {
             if (net > 0) {
-                return "Based on today’s logs, you’re in a net surplus of about " + net + " kcal (consumed minus burned).";
+                return "Based on today’s logs, you’re in a net surplus of about " + net + " kcal.";
             } else if (net < 0) {
-                return "Based on today’s logs, you’re in a net deficit of about " + Math.abs(net) + " kcal (burned more than you consumed).";
+                return "Based on today’s logs, you’re in a net deficit of about " + Math.abs(net) + " kcal.";
             } else {
-                return "Right now your net balance is roughly even (consumed and burned are similar).";
+                return "Right now your calorie balance is roughly even.";
             }
         }
 
-        // Default helpful reply
-        return "I can help with food, exercise, and calorie balance. Try asking: “How can I reduce calories today?” or “What workout should I do next?”";
+        return "I can help with food, exercise, calorie balance, and general fitness guidance. This is informational support only and not medical advice.";
     }
 }
