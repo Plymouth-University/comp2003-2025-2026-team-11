@@ -41,4 +41,14 @@ public class UserTable {
         return db.delete(TABLE_NAME, COL_EMAIL + "=?",
                 new String[]{email});
     }
+    public static boolean exists(SQLiteDatabase db, String email) {
+        Cursor cursor = getByEmail(db, email);
+        boolean exists = cursor != null && cursor.moveToFirst();
+
+        if (cursor != null) {
+            cursor.close();
+        }
+
+        return exists;
+    }
 }

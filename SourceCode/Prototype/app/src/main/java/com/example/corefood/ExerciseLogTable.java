@@ -61,6 +61,21 @@ public class ExerciseLogTable {
         }
         return totalCalories;
     }
+    public static int getTotalCaloriesBurnedForUserOnDate(SQLiteDatabase db, String userEmail, String datePrefix) {
+        int totalCalories = 0;
+        String query = "SELECT SUM(" + COL_CALORIES_BURNED + ") FROM " + TABLE_NAME +
+                " WHERE " + COL_USER_EMAIL + "=? AND " + COL_TIME + " LIKE ?";
+        Cursor cursor = db.rawQuery(query, new String[]{userEmail, datePrefix + "%"});
+
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                totalCalories = cursor.isNull(0) ? 0 : cursor.getInt(0);
+            }
+            cursor.close();
+        }
+
+        return totalCalories;
+    }
 
     // New method to delete all logs for a user
     public static void deleteAllLogsForUser(SQLiteDatabase db, String userEmail) {

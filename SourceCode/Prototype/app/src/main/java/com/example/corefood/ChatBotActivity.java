@@ -1,7 +1,6 @@
 package com.example.corefood;
 
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
@@ -13,19 +12,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class ChatBotActivity extends AppCompatActivity {
-
-    private static final String FALLBACK_TEST_EMAIL = "test@example.com";
 
     private TextView tvContext;
     private TextView tvTranscript;
     private EditText etMessage;
     private Button btnSend;
-    private DatabaseHelper dbHelper;
 
+    private HealthDataManager healthDataManager;
     private String currentUserEmail;
 
     @Override
@@ -33,7 +28,7 @@ public class ChatBotActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_bot);
 
-        dbHelper = new DatabaseHelper(this);
+        healthDataManager = new HealthDataManager(this);
 
         tvContext = findViewById(R.id.tvContext);
         tvTranscript = findViewById(R.id.tvChatTranscript);
@@ -42,7 +37,7 @@ public class ChatBotActivity extends AppCompatActivity {
 
         tvTranscript.setMovementMethod(new ScrollingMovementMethod());
 
-        currentUserEmail = resolveBestUserEmail();
+        currentUserEmail = resolveCurrentUserEmail();
         setupBottomNavigation();
         refreshContext();
 
@@ -52,7 +47,7 @@ public class ChatBotActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        currentUserEmail = resolveBestUserEmail();
+        currentUserEmail = resolveCurrentUserEmail();
         refreshContext();
     }
 
@@ -91,45 +86,38 @@ public class ChatBotActivity extends AppCompatActivity {
         });
     }
 
-    private String resolveBestUserEmail() {
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        String firebaseEmail = firebaseUser != null ? firebaseUser.getEmail() : null;
-
-        if (!TextUtils.isEmpty(firebaseEmail) && hasAnyLocalData(firebaseEmail)) {
-            return firebaseEmail;
+    private String resolveCurrentUserEmail() {
+        String email = healthDataManager.getCurrentUserEmail();
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, "No logged-in user found. Please log in again.", Toast.LENGTH_LONG).show();
+            finish();
+            return null;
         }
-
-        if (hasAnyLocalData(FALLBACK_TEST_EMAIL)) {
-            Toast.makeText(this, "Using local test data for chatbot context", Toast.LENGTH_SHORT).show();
-            return FALLBACK_TEST_EMAIL;
-        }
-
-        if (!TextUtils.isEmpty(firebaseEmail)) {
-            return firebaseEmail;
-        }
-
-        return FALLBACK_TEST_EMAIL;
-    }
-
-    private boolean hasAnyLocalData(String email) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, email);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, email);
-        return consumed > 0 || burned > 0;
+        return email;
     }
 
     private void refreshContext() {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, currentUserEmail);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, currentUserEmail);
-        int net = consumed - burned;
+        if (TextUtils.isEmpty(currentUserEmail)) {
+            return;
+        }
 
-        tvContext.setText("Today: Consumed " + consumed + " kcal • Burned " + burned + " kcal • Net " + net + " kcal");
+        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(currentUserEmail);
+
+        tvContext.setText(
+                "Today: Consumed " + summary.getConsumed() +
+                        " kcal • Burned " + summary.getBurned() +
+                        " kcal • Net " + summary.getNet() + " kcal"
+        );
     }
 
     private void sendMessage() {
         String userMsg = etMessage.getText().toString().trim();
         if (TextUtils.isEmpty(userMsg)) {
+            return;
+        }
+
+        if (TextUtils.isEmpty(currentUserEmail)) {
+            Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -189,28 +177,25 @@ public class ChatBotActivity extends AppCompatActivity {
     }
 
     private String buildPrompt(String userMsg) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, currentUserEmail);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, currentUserEmail);
-        int net = consumed - burned;
+        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(currentUserEmail);
 
         String transcriptSnapshot = tvTranscript.getText().toString();
         if (transcriptSnapshot.length() > 800) {
             transcriptSnapshot = transcriptSnapshot.substring(transcriptSnapshot.length() - 800);
         }
 
-        return "You are the CoreFoods chatbot, an AI assistant for a student fitness app prototype. "
+        return "You are the CoreFoods chatbot, an AI assistant for a student fitness app. "
                 + "Help users with food, calorie balance, exercise, motivation, and general fitness guidance. "
                 + "Use the provided user data when relevant. "
                 + "Do not invent user facts that are not available. "
                 + "Do not provide medical diagnosis or treatment advice. "
                 + "If the topic becomes medical or risky, briefly say the user should consult a qualified professional. "
-                + "Keep replies natural, useful, and reasonably concise for a mobile app.\n\n"
+                + "Keep replies natural, useful, and concise for a mobile app.\n\n"
 
                 + "User context:\n"
-                + "- Calories consumed today: " + consumed + "\n"
-                + "- Calories burned today: " + burned + "\n"
-                + "- Net calories today: " + net + "\n\n"
+                + "- Calories consumed today: " + summary.getConsumed() + "\n"
+                + "- Calories burned today: " + summary.getBurned() + "\n"
+                + "- Net calories today: " + summary.getNet() + "\n\n"
 
                 + "Recent chat:\n"
                 + transcriptSnapshot + "\n\n"
@@ -220,10 +205,9 @@ public class ChatBotActivity extends AppCompatActivity {
     }
 
     private String generatePrototypeReply(String userMsg) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, currentUserEmail);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, currentUserEmail);
-        int net = consumed - burned;
+        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(currentUserEmail);
+        int burned = summary.getBurned();
+        int net = summary.getNet();
 
         String lower = userMsg.toLowerCase();
 

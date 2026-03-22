@@ -11,11 +11,13 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import com.example.corefood.R;
-import com.example.corefood.DatabaseHelper;
-import com.example.corefood.ExerciseLogTable;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ExerciseActivity extends AppCompatActivity {
 
@@ -24,8 +26,17 @@ public class ExerciseActivity extends AppCompatActivity {
     private TextView tvExerciseList;
     private DatabaseHelper dbHelper;
 
-    // Hardcoded test user email. In a real app, this would come from a login session.
-    private final String TEST_USER_EMAIL = "test@example.com";
+    private static final DateTimeFormatter STORAGE_DATE_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    private String requireCurrentUserEmail() {
+        String email = UserSessionManager.getCurrentUserEmail();
+        if (email == null) {
+            Toast.makeText(this, "No logged-in user found. Please log in again.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+        return email;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +53,6 @@ public class ExerciseActivity extends AppCompatActivity {
         tvExerciseList = findViewById(R.id.tvExerciseListPlaceholder);
         Button btnSaveExercise = findViewById(R.id.btnSaveExercise);
 
-        //Dashboard Navigation
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setSelectedItemId(R.id.nav_exercises);
 
@@ -69,14 +79,15 @@ public class ExerciseActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             } else if (itemId == R.id.ai_menu) {
-            startActivity(new Intent(this, ChatBotActivity.class));
-            return true;
+                startActivity(new Intent(this, ChatBotActivity.class));
+                return true;
             }
 
             return false;
         });
 
         setupSpinners();
+        setupTimeField();
         btnSaveExercise.setOnClickListener(v -> saveExercise());
         renderStoredExercises();
     }
@@ -91,22 +102,43 @@ public class ExerciseActivity extends AppCompatActivity {
         String[] exerciseTypes = {"Walking", "Running", "Cycling", "Weight Training", "Swimming", "Yoga", "HIIT", "Other"};
         String[] intensityLevels = {"Low", "Medium", "High"};
 
-        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, exerciseTypes);
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                exerciseTypes
+        );
         spExerciseType.setAdapter(typeAdapter);
 
-        ArrayAdapter<String> intensityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, intensityLevels);
+        ArrayAdapter<String> intensityAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                intensityLevels
+        );
         spIntensity.setAdapter(intensityAdapter);
+    }
+
+    private void setupTimeField() {
+        etExerciseTime.setText(getCurrentTimestamp());
+        etExerciseTime.setEnabled(false);
+        etExerciseTime.setFocusable(false);
+        etExerciseTime.setClickable(false);
+        etExerciseTime.setLongClickable(false);
+        etExerciseTime.setCursorVisible(false);
+    }
+
+    private String getCurrentTimestamp() {
+        return LocalDateTime.now().format(STORAGE_DATE_TIME_FORMAT);
     }
 
     private void saveExercise() {
         String type = spExerciseType.getSelectedItem().toString();
         String intensity = spIntensity.getSelectedItem().toString();
         String durationStr = etDuration.getText().toString().trim();
-        String time = etExerciseTime.getText().toString().trim();
         String notes = etExerciseNotes.getText().toString().trim();
+        String timestamp = getCurrentTimestamp();
 
-        if (TextUtils.isEmpty(durationStr) || TextUtils.isEmpty(time)) {
-            Toast.makeText(this, "Please fill in duration and time.", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(durationStr)) {
+            Toast.makeText(this, "Please fill in duration.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -123,10 +155,29 @@ public class ExerciseActivity extends AppCompatActivity {
             return;
         }
 
-        int caloriesBurned = estimateCaloriesBurned(type, intensity, duration);
+        int caloriesBurned = CalorieCalculator.estimateExerciseCalories(type, intensity, duration);
 
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ExerciseLogTable.insert(db, TEST_USER_EMAIL, type, intensity, duration, caloriesBurned, time, notes);
+        String userEmail = requireCurrentUserEmail();
+        if (userEmail == null) return;
+
+        dbHelper.ensureUserExists(userEmail);
+
+        long result = ExerciseLogTable.insert(
+                db,
+                userEmail,
+                type,
+                intensity,
+                duration,
+                caloriesBurned,
+                timestamp,
+                notes
+        );
+
+        if (result == -1) {
+            Toast.makeText(this, "Failed to save exercise.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         renderStoredExercises();
         clearInputs();
@@ -135,17 +186,20 @@ public class ExerciseActivity extends AppCompatActivity {
 
     private void renderStoredExercises() {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = ExerciseLogTable.getLogsForUser(db, TEST_USER_EMAIL);
+        String userEmail = requireCurrentUserEmail();
+        if (userEmail == null) return;
+
+        Cursor cursor = ExerciseLogTable.getLogsForUser(db, userEmail);
 
         StringBuilder builder = new StringBuilder();
-        if (cursor != null && cursor.moveToFirst()) {
+        if (cursor != null) {
             int typeIndex = cursor.getColumnIndex(ExerciseLogTable.COL_EXERCISE_TYPE);
             int intensityIndex = cursor.getColumnIndex(ExerciseLogTable.COL_INTENSITY);
             int durationIndex = cursor.getColumnIndex(ExerciseLogTable.COL_DURATION_MINS);
             int calsIndex = cursor.getColumnIndex(ExerciseLogTable.COL_CALORIES_BURNED);
             int timeIndex = cursor.getColumnIndex(ExerciseLogTable.COL_TIME);
 
-            do {
+            while (cursor.moveToNext()) {
                 String type = cursor.getString(typeIndex);
                 String intensity = cursor.getString(intensityIndex);
                 int duration = cursor.getInt(durationIndex);
@@ -153,10 +207,17 @@ public class ExerciseActivity extends AppCompatActivity {
                 String time = cursor.getString(timeIndex);
 
                 builder.append("• ")
-                        .append(type).append(" (").append(intensity).append(") - ")
-                        .append(duration).append(" mins at ").append(time)
-                        .append(" | ~").append(cals).append(" kcal\n");
-            } while (cursor.moveToNext());
+                        .append(type)
+                        .append(" (")
+                        .append(intensity)
+                        .append(") - ")
+                        .append(duration)
+                        .append(" mins at ")
+                        .append(time)
+                        .append(" | ~")
+                        .append(cals)
+                        .append(" kcal\n");
+            }
             cursor.close();
         }
 
@@ -165,31 +226,7 @@ public class ExerciseActivity extends AppCompatActivity {
 
     private void clearInputs() {
         etDuration.setText("");
-        etExerciseTime.setText("");
         etExerciseNotes.setText("");
-    }
-
-    private int estimateCaloriesBurned(String type, String intensity, int durationMins) {
-        // Simple prototype estimates.
-        double baseRate;
-        switch (type) {
-            case "Running": baseRate = 10.0; break;
-            case "Cycling": baseRate = 8.0; break;
-            case "Swimming": baseRate = 9.0; break;
-            case "Weight Training": baseRate = 6.0; break;
-            case "HIIT": baseRate = 11.0; break;
-            case "Yoga": baseRate = 4.0; break;
-            case "Walking": baseRate = 5.0; break;
-            default: baseRate = 6.0; break; // "Other"
-        }
-
-        double intensityMultiplier;
-        switch (intensity) {
-            case "High": intensityMultiplier = 1.3; break;
-            case "Low": intensityMultiplier = 0.8; break;
-            default: intensityMultiplier = 1.0; break; // Medium
-        }
-
-        return (int) Math.round(baseRate * intensityMultiplier * durationMins);
+        etExerciseTime.setText(getCurrentTimestamp());
     }
 }

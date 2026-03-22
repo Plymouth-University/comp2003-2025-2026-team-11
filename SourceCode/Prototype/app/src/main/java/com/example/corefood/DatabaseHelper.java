@@ -56,4 +56,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "password123" // Dummy password
         );
     }
+
+    public void ensureUserExists(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return;
+        }
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        if (!UserTable.exists(db, email)) {
+            UserTable.insert(db, email.trim().toLowerCase(), "");
+        }
+    }
 }

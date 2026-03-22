@@ -1,7 +1,6 @@
 package com.example.corefood;
 
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -11,30 +10,35 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.corefood.ExerciseLogTable;
-import com.example.corefood.FoodLogTable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class CaloriesActivity extends AppCompatActivity {
 
     private EditText etDailyTarget;
     private TextView tvConsumed, tvBurned, tvNet, tvNotes;
-    private DatabaseHelper dbHelper;
+    private HealthDataManager healthDataManager;
 
-    // Hardcoded test user email. In a real app, this would come from a login session.
-    private final String TEST_USER_EMAIL = "test@example.com";
+    private String requireCurrentUserEmail() {
+        String email = UserSessionManager.getCurrentUserEmail();
+        if (email == null) {
+            Toast.makeText(this, "No logged-in user found. Please log in again.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+        return email;
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
-        refreshFromDatabase(null);
+        refreshFromData(null);
     }
 
-    private void refreshFromDatabase(Integer target) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        int consumed = FoodLogTable.getTotalCaloriesForUser(db, TEST_USER_EMAIL);
-        int burned = ExerciseLogTable.getTotalCaloriesBurnedForUser(db, TEST_USER_EMAIL);
-        renderTotals(consumed, burned, target);
+    private void refreshFromData(Integer target) {
+        String userEmail = requireCurrentUserEmail();
+        if (userEmail == null) return;
+
+        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(userEmail);
+        renderTotals(summary, target);
     }
 
     @Override
@@ -42,7 +46,7 @@ public class CaloriesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calories);
 
-        dbHelper = new DatabaseHelper(this);
+        healthDataManager = new HealthDataManager(this);
 
         etDailyTarget = findViewById(R.id.etDailyTarget);
         tvConsumed = findViewById(R.id.tvConsumed);
@@ -50,7 +54,6 @@ public class CaloriesActivity extends AppCompatActivity {
         tvNet = findViewById(R.id.tvNet);
         tvNotes = findViewById(R.id.tvNotes);
 
-        //Dashboard Navigation
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setSelectedItemId(R.id.nav_calories);
 
@@ -86,7 +89,7 @@ public class CaloriesActivity extends AppCompatActivity {
         Button btnRecalculate = findViewById(R.id.btnRecalculate);
         Button btnResetDay = findViewById(R.id.btnResetDay);
 
-        refreshFromDatabase(null);
+        refreshFromData(null);
 
         btnRecalculate.setOnClickListener(v -> recalculate());
         btnResetDay.setOnClickListener(v -> resetDay());
@@ -112,39 +115,34 @@ public class CaloriesActivity extends AppCompatActivity {
             return;
         }
 
-        refreshFromDatabase(target);
+        refreshFromData(target);
         Toast.makeText(this, "Recalculated.", Toast.LENGTH_SHORT).show();
     }
 
     private void resetDay() {
         etDailyTarget.setText("");
-
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        FoodLogTable.deleteAllLogsForUser(db, TEST_USER_EMAIL);
-        ExerciseLogTable.deleteAllLogsForUser(db, TEST_USER_EMAIL);
-
-        refreshFromDatabase(null);
-
-        tvNotes.setText("Day reset. Log meals and exercises again to rebuild totals.");
-        Toast.makeText(this, "Day reset.", Toast.LENGTH_SHORT).show();
+        refreshFromData(null);
+        tvNotes.setText("Daily target cleared. Today's logs are still saved.");
+        Toast.makeText(this, "Daily target cleared.", Toast.LENGTH_SHORT).show();
     }
 
-    private void renderTotals(int consumed, int burned, Integer target) {
-        tvConsumed.setText("Calories consumed: " + consumed + " kcal");
-        tvBurned.setText("Calories burned (estimated): " + burned + " kcal");
+    private void renderTotals(CalorieSummary summary, Integer target) {
+        int consumed = summary.getConsumed();
+        int burned = summary.getBurned();
+        int net = summary.getNet();
 
-        int net = consumed - burned;
-        tvNet.setText("Net balance: " + net + " kcal");
+        tvConsumed.setText("Today's calories consumed: " + consumed + " kcal");
+        tvBurned.setText("Today's calories burned: " + burned + " kcal");
+        tvNet.setText("Today's net calories: " + net + " kcal");
 
         if (target != null) {
             int delta = target - net;
             String status = (delta >= 0)
-                    ? ("You are about " + delta + " kcal under your target.")
-                    : ("You are about " + Math.abs(delta) + " kcal over your target.");
+                    ? ("You are about " + delta + " kcal under your daily target today.")
+                    : ("You are about " + Math.abs(delta) + " kcal over your daily target today.");
             tvNotes.setText(status);
         } else {
-            // Clear the notes if there's no target
-            tvNotes.setText("");
+            tvNotes.setText("Showing today's calorie summary.");
         }
     }
 }
