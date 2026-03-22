@@ -38,26 +38,13 @@
             android:orientation="vertical"
             android:layout_marginTop="12dp">
 
-            <include
-                android:id="@+id/row_progress"
-                layout="@layout/category_select"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/row_questions"
-                layout="@layout/category_select"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/row_tips"
-                layout="@layout/category_select"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+            <include android:id="@+id/row_progress" layout="@layout/category_select" />
+            <include android:id="@+id/row_questions" layout="@layout/category_select" />
+            <include android:id="@+id/row_training" layout="@layout/category_select" />
         </LinearLayout>
 
         <TextView
+            android:id="@+id/text_input_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Add Description"
@@ -78,9 +65,85 @@
             android:textSize="16sp"
             android:paddingBottom="12dp"
             android:paddingTop="12dp"
-            android:gravity="center_vertical"
-            android:inputType="textMultiLine"
-            android:minLines="1" />
+            android:inputType="textMultiLine" />
+
+        <LinearLayout
+            android:id="@+id/training_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scheme Title"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <EditText
+                android:id="@+id/edit_training_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="#03DAC5"
+                android:hint="Training Title..."
+                android:textColor="#FFFFFF"
+                android:textColorHint="#555555"
+                android:textSize="16sp"
+                android:paddingBottom="12dp"
+                android:inputType="textCapWords" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Training Description"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <EditText
+                android:id="@+id/edit_training_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="#03DAC5"
+                android:hint="An overview of the training..."
+                android:textColor="#FFFFFF"
+                android:textColorHint="#555555"
+                android:textSize="16sp"
+                android:paddingBottom="12dp"
+                android:inputType="textMultiLine" />
+
+            <TextView
+                android:id="@+id/text_scheme_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Instructions"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp" />
+
+            <EditText
+                android:id="@+id/edit_training_scheme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="#03DAC5"
+                android:hint="Enter the full breakdown here..."
+                android:textColor="#FFFFFF"
+                android:textColorHint="#555555"
+                android:textSize="16sp"
+                android:paddingBottom="12dp"
+                android:gravity="top"
+                android:inputType="textMultiLine"
+                android:minLines="3" />
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/button_post"
