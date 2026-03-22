@@ -1,12 +1,17 @@
 package com.example.firebaseproject;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -20,6 +25,7 @@ public class ForumPage extends AppCompatActivity {
     private List<Post> postList = new ArrayList<>();
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private ListenerRegistration listenerRegistration;
+    private ImageView profileImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +37,13 @@ public class ForumPage extends AppCompatActivity {
 
         adapter = new PostAdapter(postList);
         recyclerView.setAdapter(adapter);
+
+        //Profile Picture Setup
+        profileImage = findViewById(R.id.profile_image);
+        findViewById(R.id.profile_image).setOnClickListener(v ->
+                startActivity(new Intent(this, ProfilePage.class)));
+
+        loadUserProfileImage();
 
         //Category Groups
         RadioGroup categoryGroup = findViewById(R.id.category_group);
@@ -45,6 +58,27 @@ public class ForumPage extends AppCompatActivity {
 
         findViewById(R.id.fab_add_post).setOnClickListener(v ->
                 startActivity(new Intent(this, UploadForumPage.class)));
+    }
+
+    //Load the current user's profile image
+    private void loadUserProfileImage() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        db.collection("users").document(uid).get().addOnSuccessListener(doc -> {
+            if (doc.exists() && doc.contains("profileImageBase64")) {
+                String encodedImage = doc.getString("profileImageBase64");
+                if (encodedImage != null && !encodedImage.isEmpty()) {
+                    try {
+                        byte[] decodedString = Base64.decode(encodedImage, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        profileImage.setImageBitmap(decodedByte);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
     }
 
     //Grab the post information from Firebase
@@ -65,10 +99,9 @@ public class ForumPage extends AppCompatActivity {
                 Post post = doc.toObject(Post.class);
 
                 if (post != null) {
-                    post.setPostId(doc.getId()); // Needed for answers sub-collection
+                    post.setPostId(doc.getId());
 
-                    // --- SMART NAME CHECK ---
-                    // Fixes "Guest U." by checking legacy 'username' field if firstName is null
+                    //Name Check
                     if (post.getFirstName() == null && doc.contains("username")) {
                         String full = doc.getString("username");
                         if (full != null) {

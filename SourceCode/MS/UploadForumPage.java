@@ -3,6 +3,7 @@ package com.example.firebaseproject;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,9 @@ public class UploadForumPage extends AppCompatActivity {
     private View lastSelectedIndicator;
     private EditText editCaption;
     private ProgressBar progressBar;
+    private LinearLayout trainingContainer;
+    private TextView inputHeader;
+    private EditText editTrainingTitle, editTrainingDesc, editTrainingScheme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +34,11 @@ public class UploadForumPage extends AppCompatActivity {
 
         editCaption = findViewById(R.id.edit_caption);
         progressBar = findViewById(R.id.progress_bar);
+        trainingContainer = findViewById(R.id.training_container);
+        inputHeader = findViewById(R.id.text_input_header);
+        editTrainingTitle = findViewById(R.id.edit_training_title);
+        editTrainingDesc = findViewById(R.id.edit_training_description);
+        editTrainingScheme = findViewById(R.id.edit_training_scheme);
 
         //Back button
         findViewById(R.id.button_back).setOnClickListener(v -> finish());
@@ -37,9 +46,11 @@ public class UploadForumPage extends AppCompatActivity {
         //Category Selector
         setupCategory(R.id.row_progress, "Progress", "Share your fitness milestones", true);
         setupCategory(R.id.row_questions, "Questions", "Ask the community for advice", false);
-        setupCategory(R.id.row_tips, "Tips", "Share workout or diet secrets", false);
+        setupCategory(R.id.row_training, "Training", "Share workout or diet schemes", false);
 
         findViewById(R.id.button_post).setOnClickListener(v -> uploadPost());
+
+        updateTrainingHint();
     }
 
     private void setupCategory(int rowId, String name, String description, boolean isDefault) {
@@ -62,19 +73,68 @@ public class UploadForumPage extends AppCompatActivity {
             indicator.setSelected(true);
             lastSelectedIndicator = indicator;
             selectedCategory = name;
+
+            //Toggle training fields
+            if (name.equalsIgnoreCase("Training")) {
+                //Hide the standard header and show training inputs
+                inputHeader.setVisibility(View.GONE);
+                trainingContainer.setVisibility(View.VISIBLE);
+                editCaption.setVisibility(View.GONE);
+            } else {
+                //Show standard header and caption
+                inputHeader.setVisibility(View.VISIBLE);
+                inputHeader.setText("Add Description");
+                trainingContainer.setVisibility(View.GONE);
+                editCaption.setVisibility(View.VISIBLE);
+            }
         });
+    }
+
+    //Set hint based on trainerType in Firestore
+    private void updateTrainingHint() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        FirebaseFirestore.getInstance().collection("users").document(user.getUid()).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String type = doc.getString("trainerType");
+                        if (type != null && type.toLowerCase().contains("diet")) {
+                            editTrainingScheme.setHint("Break down the meal plan...");
+                        } else {
+                            editTrainingScheme.setHint("Break down the workout plan...");
+                        }
+                    }
+                });
     }
 
     //Push post to Firebase
     private void uploadPost() {
-        String caption = editCaption.getText().toString().trim();
-        if (caption.isEmpty()) {
-            Toast.makeText(this, "Please enter a description", Toast.LENGTH_SHORT).show();
-            return;
+        String finalCaption;
+
+        if (selectedCategory.equalsIgnoreCase("Training")) {
+            // Using the Title field as the main caption for the card header
+            finalCaption = editTrainingTitle.getText().toString().trim();
+            if (finalCaption.isEmpty()) {
+                Toast.makeText(this, "Please enter a scheme title", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Validate description is also present for the professional layout
+            if (editTrainingDesc.getText().toString().trim().isEmpty()) {
+                Toast.makeText(this, "Please enter a short description", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            finalCaption = editCaption.getText().toString().trim();
+            if (finalCaption.isEmpty()) {
+                Toast.makeText(this, "Please enter a description", Toast.LENGTH_SHORT).show();
+                return;
+            }
         }
 
         progressBar.setVisibility(View.VISIBLE);
-        saveToFirestore(caption);
+        saveToFirestore(finalCaption);
     }
 
     private void saveToFirestore(String caption) {
@@ -88,10 +148,19 @@ public class UploadForumPage extends AppCompatActivity {
         db.collection("users").document(uid).get().addOnSuccessListener(documentSnapshot -> {
             String fName = "Guest";
             String lName = "User";
+            boolean isTrainer = false;
+            String type = "Member";
 
             if (documentSnapshot.exists()) {
                 fName = documentSnapshot.getString("firstName");
                 lName = documentSnapshot.getString("lastName");
+
+                if (documentSnapshot.contains("isTrainer")) {
+                    isTrainer = Boolean.TRUE.equals(documentSnapshot.getBoolean("isTrainer"));
+                }
+                if (documentSnapshot.contains("trainerType")) {
+                    type = documentSnapshot.getString("trainerType");
+                }
             }
 
             //Create the post
@@ -101,7 +170,16 @@ public class UploadForumPage extends AppCompatActivity {
             postData.put("caption", caption);
             postData.put("category", selectedCategory);
             postData.put("timestamp", System.currentTimeMillis());
-            postData.put("userId", uid); // Good practice to keep track of who posted
+            postData.put("isTrainer", isTrainer);
+            postData.put("trainerType", type);
+            postData.put("likeCount", 0);
+            postData.put("userId", uid); //Keep track of who has posted (good practice)
+
+            //Fields for training option
+            if (selectedCategory.equalsIgnoreCase("Training")) {
+                postData.put("trainingDescription", editTrainingDesc.getText().toString().trim());
+                postData.put("trainingScheme", editTrainingScheme.getText().toString().trim());
+            }
 
             db.collection("posts").add(postData)
                     .addOnSuccessListener(doc -> finish())
