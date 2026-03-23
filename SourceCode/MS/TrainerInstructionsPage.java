@@ -41,7 +41,7 @@ public class TrainerInstructionsPage extends AppCompatActivity {
         ImageButton btnLike = findViewById(R.id.button_like);
 
         //Get data from Intent
-        postId = getIntent().getStringExtra("postId"); // Passed from PostAdapter
+        postId = getIntent().getStringExtra("postId");
         String title = getIntent().getStringExtra("title");
         String trainerName = getIntent().getStringExtra("trainerName");
         String trainerType = getIntent().getStringExtra("trainerType");
@@ -93,22 +93,23 @@ public class TrainerInstructionsPage extends AppCompatActivity {
         btnLike.setOnClickListener(v -> {
             isLiked = !isLiked;
             DocumentReference postRef = db.collection("posts").document(postId);
+            DocumentReference userLikeRef = postRef.collection("user_likes").document(currentUserId);
 
             if (isLiked) {
-                likeCount++;
                 btnLike.setColorFilter(Color.parseColor("#03DAC5"));
 
-                //Increment likeCount in Firestore
+                //Increment likeCount
                 postRef.update("likeCount", FieldValue.increment(1));
+                Map<String, Object> likeData = new HashMap<>();
+                likeData.put("likedAt", FieldValue.serverTimestamp());
+                userLikeRef.set(likeData);
             } else {
-                if (likeCount > 0) likeCount--;
                 btnLike.setColorFilter(Color.WHITE);
 
-                //Decrement likeCount in Firestore
+                //Decrement likeCount
                 postRef.update("likeCount", FieldValue.increment(-1));
+                userLikeRef.delete();
             }
-
-            tvLikeCount.setText(String.valueOf(likeCount));
 
             //Animation for the heart
             btnLike.animate().scaleX(1.3f).scaleY(1.3f).setDuration(100).withEndAction(() ->
@@ -131,8 +132,13 @@ public class TrainerInstructionsPage extends AppCompatActivity {
 
     private void checkFirebaseStatus(ImageButton btnLike, ImageButton btnFav) {
         //Check Liked Status
-        db.collection("posts").document(postId).get().addOnSuccessListener(doc -> {
-        });
+        db.collection("posts").document(postId).collection("user_likes").document(currentUserId).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        isLiked = true;
+                        btnLike.setColorFilter(Color.parseColor("#03DAC5"));
+                    }
+                });
 
         //Check Favourite Status
         db.collection("users").document(currentUserId).collection("favourites").document(postId).get()
