@@ -84,33 +84,60 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
-        <LinearLayout
-            android:id="@+id/container_posts"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="100dp"
+            android:layout_height="200dp"
             android:background="#1A1A1A"
-            android:orientation="vertical"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="24dp">
+            <LinearLayout
+                android:id="@+id/container_posts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp" />
+        </androidx.core.widget.NestedScrollView>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="SAVED TRAINING SCHEMES"
+            android:text="MY TRAINER SCHEMES"
             android:textColor="#03DAC5"
             android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
-        <LinearLayout
-            android:id="@+id/container_training"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="100dp"
+            android:layout_height="200dp"
             android:background="#1A1A1A"
-            android:orientation="vertical"
-            android:padding="12dp"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="24dp">
+            <LinearLayout
+                android:id="@+id/container_schemes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp" />
+        </androidx.core.widget.NestedScrollView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SAVED WORKOUT SCHEMES"
+            android:textColor="#03DAC5"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="#1A1A1A"
+            android:layout_marginBottom="24dp">
+            <LinearLayout
+                android:id="@+id/container_workout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp" />
+        </androidx.core.widget.NestedScrollView>
 
         <TextView
             android:layout_width="wrap_content"
@@ -120,15 +147,18 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
-        <LinearLayout
-            android:id="@+id/container_diets"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="100dp"
+            android:layout_height="200dp"
             android:background="#1A1A1A"
-            android:orientation="vertical"
-            android:padding="12dp"
-            android:layout_marginBottom="32dp"/>
+            android:layout_marginBottom="32dp">
+            <LinearLayout
+                android:id="@+id/container_diets"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp" />
+        </androidx.core.widget.NestedScrollView>
 
     </LinearLayout>
 </ScrollView>
