@@ -1,5 +1,6 @@
 package com.example.firebaseproject;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -41,14 +42,16 @@ public class UploadForumPage extends AppCompatActivity {
         editTrainingScheme = findViewById(R.id.edit_training_scheme);
 
         //Back button
-        findViewById(R.id.button_back).setOnClickListener(v -> finish());
+        findViewById(R.id.button_back).setOnClickListener(v -> startActivity(new Intent(this, ForumPage.class)));
 
         //Category Selector
         setupCategory(R.id.row_progress, "Progress", "Share your fitness milestones", true);
         setupCategory(R.id.row_questions, "Questions", "Ask the community for advice", false);
         setupCategory(R.id.row_training, "Training", "Share workout or diet schemes", false);
 
-        findViewById(R.id.button_post).setOnClickListener(v -> uploadPost());
+        findViewById(R.id.button_post).setOnClickListener(v -> {
+            uploadPost();
+        });
 
         updateTrainingHint();
     }
@@ -69,25 +72,46 @@ public class UploadForumPage extends AppCompatActivity {
         }
 
         row.setOnClickListener(v -> {
-            if (lastSelectedIndicator != null) lastSelectedIndicator.setSelected(false);
-            indicator.setSelected(true);
-            lastSelectedIndicator = indicator;
-            selectedCategory = name;
-
-            //Toggle training fields
+            //Check if the user has trainer status
             if (name.equalsIgnoreCase("Training")) {
-                //Hide the standard header and show training inputs
-                inputHeader.setVisibility(View.GONE);
-                trainingContainer.setVisibility(View.VISIBLE);
-                editCaption.setVisibility(View.GONE);
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user != null) {
+                    FirebaseFirestore.getInstance().collection("users").document(user.getUid()).get()
+                            .addOnSuccessListener(doc -> {
+                                boolean isTrainer = doc.exists() && Boolean.TRUE.equals(doc.getBoolean("isTrainer"));
+                                if (isTrainer) {
+                                    applyCategorySelection(indicator, name);
+                                } else {
+                                    Toast.makeText(this, "Only Trainers can post in this section", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }
             } else {
-                //Show standard header and caption
-                inputHeader.setVisibility(View.VISIBLE);
-                inputHeader.setText("Add Description");
-                trainingContainer.setVisibility(View.GONE);
-                editCaption.setVisibility(View.VISIBLE);
+                applyCategorySelection(indicator, name);
             }
         });
+    }
+
+    //Changes UI
+    private void applyCategorySelection(View indicator, String name) {
+        if (lastSelectedIndicator != null) lastSelectedIndicator.setSelected(false);
+        indicator.setSelected(true);
+        lastSelectedIndicator = indicator;
+        selectedCategory = name;
+
+        //Toggle training fields
+        if (name.equalsIgnoreCase("Training")) {
+            //Hide the standard header and show training inputs
+            inputHeader.setVisibility(View.GONE);
+            trainingContainer.setVisibility(View.VISIBLE);
+            editCaption.setVisibility(View.GONE);
+        } else {
+            //Show standard header and caption
+            inputHeader.setVisibility(View.VISIBLE);
+            inputHeader.setText("Add Description");
+            trainingContainer.setVisibility(View.GONE);
+            editCaption.setVisibility(View.VISIBLE);
+        }
     }
 
     //Set hint based on trainerType in Firestore
@@ -113,14 +137,12 @@ public class UploadForumPage extends AppCompatActivity {
         String finalCaption;
 
         if (selectedCategory.equalsIgnoreCase("Training")) {
-            // Using the Title field as the main caption for the card header
             finalCaption = editTrainingTitle.getText().toString().trim();
             if (finalCaption.isEmpty()) {
                 Toast.makeText(this, "Please enter a scheme title", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Validate description is also present for the professional layout
             if (editTrainingDesc.getText().toString().trim().isEmpty()) {
                 Toast.makeText(this, "Please enter a short description", Toast.LENGTH_SHORT).show();
                 return;
@@ -163,6 +185,13 @@ public class UploadForumPage extends AppCompatActivity {
                 }
             }
 
+            //Check the trainer status again
+            if (selectedCategory.equalsIgnoreCase("Training") && !isTrainer) {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(this, "Trainer status required to post here", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             //Create the post
             Map<String, Object> postData = new HashMap<>();
             postData.put("firstName", fName);
@@ -182,7 +211,10 @@ public class UploadForumPage extends AppCompatActivity {
             }
 
             db.collection("posts").add(postData)
-                    .addOnSuccessListener(doc -> finish())
+                    .addOnSuccessListener(doc -> {
+                        startActivity(new Intent(this, ForumPage.class));
+                        finish();
+                    })
                     .addOnFailureListener(e -> {
                         progressBar.setVisibility(View.GONE);
                         Toast.makeText(this, "Upload failed", Toast.LENGTH_SHORT).show();
