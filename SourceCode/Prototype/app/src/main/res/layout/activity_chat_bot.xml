@@ -36,8 +36,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:background="#1E2A2A"
-            android:padding="12dp"
+            android:background="#173033"
+            android:padding="14dp"
             android:text="Today: Consumed 0 kcal • Burned 0 kcal • Net 0 kcal"
             android:textColor="#FFFFFF"
             android:textSize="14sp" />
@@ -48,26 +48,26 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_marginTop="14dp"
-            android:background="#1C1C1C"
+            android:background="#1A1A1A"
             android:fadeScrollbars="false"
             android:gravity="top|start"
+            android:lineSpacingExtra="6dp"
             android:overScrollMode="always"
-            android:padding="14dp"
+            android:padding="16dp"
             android:scrollbars="vertical"
-            android:text="AI: Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
             android:textColor="#FFFFFF"
-            android:textSize="15sp"
-            android:lineSpacingExtra="4dp" />
+            android:textIsSelectable="false"
+            android:textSize="16sp" />
 
         <LinearLayout
             android:id="@+id/input_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="#1C1C1C"
+            android:background="#1A1A1A"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="10dp">
+            android:padding="12dp">
 
             <EditText
                 android:id="@+id/etMessage"
@@ -81,18 +81,21 @@
                 android:minHeight="48dp"
                 android:padding="8dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#9E9E9E" />
+                android:textColorHint="#8E8E93"
+                android:textSize="15sp" />
 
             <Button
                 android:id="@+id/btnSend"
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
-                android:layout_marginStart="10dp"
-                android:paddingStart="18dp"
-                android:paddingEnd="18dp"
+                android:layout_marginStart="12dp"
+                android:backgroundTint="#6F52B5"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
                 android:text="Send"
                 android:textAllCaps="false"
-                android:textColor="#FFFFFF" />
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
 
         </LinearLayout>
 

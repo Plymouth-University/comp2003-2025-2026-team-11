@@ -36,6 +36,9 @@ public class ChatBotActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.btnSend);
 
         tvTranscript.setMovementMethod(new ScrollingMovementMethod());
+        tvTranscript.setText(buildAiBlock(
+                "Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
+        ));
 
         currentUserEmail = resolveCurrentUserEmail();
         setupBottomNavigation();
@@ -101,12 +104,9 @@ public class ChatBotActivity extends AppCompatActivity {
             return;
         }
 
-        // Fixed the syntax error where the comment was merging with the code
         healthDataManager.getTodaySummaryForUser(currentUserEmail, new HealthDataManager.SummaryCallback() {
             @Override
             public void onSummaryLoaded(int consumed, int burned) {
-                // Ensure UI updates happen on the main thread (Firestore callbacks usually do,
-                // but it's good practice when updating text based on async results)
                 CalorieSummary summary = new CalorieSummary(consumed, burned);
                 tvContext.setText(
                         "Today: Consumed " + summary.getConsumed() +
@@ -125,27 +125,27 @@ public class ChatBotActivity extends AppCompatActivity {
     private void sendMessage() {
         String userMsg = etMessage.getText().toString().trim();
         if (TextUtils.isEmpty(userMsg)) return;
+
         if (TextUtils.isEmpty(currentUserEmail)) {
             Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        appendLine("You: " + userMsg);
+        appendBlock(buildUserBlock(userMsg));
         etMessage.setText("");
         setSendingState(true);
 
-        // CHANGE: Fetch today's data first, then trigger the AI logic
         healthDataManager.getTodaySummaryForUser(currentUserEmail, new HealthDataManager.SummaryCallback() {
             @Override
             public void onSummaryLoaded(int consumed, int burned) {
                 CalorieSummary summary = new CalorieSummary(consumed, burned);
-                String prompt = buildPrompt(userMsg, summary); // Pass summary as argument
+                String prompt = buildPrompt(userMsg, summary);
 
                 GeminiApiHelper.generateReply(prompt, new GeminiApiHelper.GeminiCallback() {
                     @Override
                     public void onSuccess(String reply) {
                         runOnUiThread(() -> {
-                            appendLine("AI: " + reply);
+                            appendBlock(buildAiBlock(reply));
                             setSendingState(false);
                         });
                     }
@@ -153,11 +153,14 @@ public class ChatBotActivity extends AppCompatActivity {
                     @Override
                     public void onError(Exception e) {
                         runOnUiThread(() -> {
-                            // Pass summary to prototype generator as well
                             String fallbackReply = generatePrototypeReply(userMsg, summary);
-                            appendLine("AI: " + fallbackReply);
+                            appendBlock(buildAiBlock(fallbackReply));
                             setSendingState(false);
-                            Toast.makeText(ChatBotActivity.this, "AI unavailable. Showing prototype response.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(
+                                    ChatBotActivity.this,
+                                    "AI unavailable. Showing prototype response.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
                         });
                     }
                 });
@@ -165,7 +168,9 @@ public class ChatBotActivity extends AppCompatActivity {
 
             @Override
             public void onError(Exception e) {
-                appendLine("AI: Sorry, I am having trouble accessing your health data right now.");
+                appendBlock(buildAiBlock(
+                        "Sorry, I am having trouble accessing your health data right now."
+                ));
                 setSendingState(false);
             }
         });
@@ -176,18 +181,37 @@ public class ChatBotActivity extends AppCompatActivity {
         btnSend.setText(isSending ? "Sending..." : "Send");
     }
 
-    private void appendLine(String line) {
-        tvTranscript.append(line + "\n\n");
+    private String buildUserBlock(String message) {
+        return "You\n\n" + message;
+    }
+
+    private String buildAiBlock(String message) {
+        return "AI Assistant\n\n" + message;
+    }
+
+    private void appendBlock(String block) {
+        String currentText = tvTranscript.getText().toString().trim();
+
+        if (currentText.isEmpty()) {
+            tvTranscript.setText(block);
+        } else {
+            tvTranscript.append("\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" + block);
+        }
 
         tvTranscript.post(() -> {
             if (tvTranscript.getLayout() == null) {
                 return;
             }
 
-            int scrollAmount = tvTranscript.getLayout().getLineTop(tvTranscript.getLineCount()) - tvTranscript.getHeight();
+            int contentHeight = tvTranscript.getLayout().getLineTop(tvTranscript.getLineCount());
+            int viewHeight = tvTranscript.getHeight();
+
+            int scrollAmount = contentHeight - viewHeight;
+
+            int topPaddingOffset = 120; // leaves a little more context visible above the latest reply
 
             if (scrollAmount > 0) {
-                tvTranscript.scrollTo(0, scrollAmount);
+                tvTranscript.scrollTo(0, Math.max(scrollAmount - topPaddingOffset, 0));
             } else {
                 tvTranscript.scrollTo(0, 0);
             }
@@ -196,8 +220,8 @@ public class ChatBotActivity extends AppCompatActivity {
 
     private String buildPrompt(String userMsg, CalorieSummary summary) {
         String transcriptSnapshot = tvTranscript.getText().toString();
-        if (transcriptSnapshot.length() > 800) {
-            transcriptSnapshot = transcriptSnapshot.substring(transcriptSnapshot.length() - 800);
+        if (transcriptSnapshot.length() > 1200) {
+            transcriptSnapshot = transcriptSnapshot.substring(transcriptSnapshot.length() - 1200);
         }
 
         return "You are the CoreFoods chatbot, an AI assistant for a student fitness app. "
