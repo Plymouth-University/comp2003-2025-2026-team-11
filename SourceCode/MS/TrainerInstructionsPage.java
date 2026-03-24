@@ -42,16 +42,32 @@ public class TrainerInstructionsPage extends AppCompatActivity {
 
         //Get data from Intent
         postId = getIntent().getStringExtra("postId");
-        String title = getIntent().getStringExtra("title");
-        String trainerName = getIntent().getStringExtra("trainerName");
-        String trainerType = getIntent().getStringExtra("trainerType");
-        String scheme = getIntent().getStringExtra("scheme");
 
-        //Set data to views
-        tvTitle.setText(title);
-        tvTrainerName.setText(trainerName);
-        tvTrainerType.setText(trainerType);
-        tvScheme.setText(scheme);
+        //Fetch the data from Firestore using the postId
+        if (postId != null) {
+            db.collection("posts").document(postId).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            //Extract strings from Firestore
+                            String title = documentSnapshot.getString("caption");
+                            String fName = documentSnapshot.getString("firstName");
+                            String lName = documentSnapshot.getString("lastName");
+                            String trainerType = documentSnapshot.getString("trainerType");
+
+                            //Decide what to display
+                            String trainingScheme = documentSnapshot.getString("trainingScheme");
+                            String dietScheme = documentSnapshot.getString("dietScheme");
+                            String finalScheme = (trainingScheme != null) ? trainingScheme : dietScheme;
+
+                            //Set data to views
+                            tvTitle.setText(title);
+                            tvTrainerName.setText(fName + " " + lName);
+                            tvTrainerType.setText(trainerType);
+                            tvScheme.setText(finalScheme);
+                        }
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(this, "Error loading post details", Toast.LENGTH_SHORT).show());
+        }
 
         //Check if user has already liked or favourited this post
         if (currentUserId != null && postId != null) {
@@ -75,6 +91,7 @@ public class TrainerInstructionsPage extends AppCompatActivity {
                 //Save to Firestore Favourites
                 Map<String, Object> data = new HashMap<>();
                 data.put("timestamp", FieldValue.serverTimestamp());
+                data.put("postId", postId);
                 favRef.set(data);
             } else {
                 btnFavourite.setImageResource(android.R.drawable.btn_star_big_off);
