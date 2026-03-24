@@ -20,12 +20,18 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 public class FoodActivity extends AppCompatActivity {
 
     private EditText etMealName, etCalories, etTime, etNotes;
     private Spinner spMealType;
     private TextView tvMealList;
     private DatabaseHelper dbHelper;
+    private FirebaseFirestore db;
+    private String userEmail;
 
     private static final DateTimeFormatter STORAGE_DATE_TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -45,6 +51,15 @@ public class FoodActivity extends AppCompatActivity {
         setContentView(R.layout.activity_food);
 
         dbHelper = new DatabaseHelper(this);
+
+        db = FirebaseFirestore.getInstance();
+
+        userEmail = UserSessionManager.getCurrentUserEmail();
+        if (userEmail == null) {
+            Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         etMealName = findViewById(R.id.etMealName);
         etCalories = findViewById(R.id.etCalories);
@@ -127,42 +142,31 @@ public class FoodActivity extends AppCompatActivity {
         String caloriesStr = etCalories.getText().toString().trim();
         String notes = etNotes.getText().toString().trim();
         String mealType = spMealType.getSelectedItem().toString();
-        String timestamp = getCurrentTimestamp();
+        String timestamp = etTime.getText().toString().trim();
 
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(caloriesStr)) {
             Toast.makeText(this, "Please fill in meal name and calories.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int calValue;
-        try {
-            calValue = Integer.parseInt(caloriesStr);
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Calories must be a number.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // Call Firestore instead of SQLite
+        addDataToFirestore(userEmail, mealType, name, caloriesStr, timestamp, notes);
+    }
 
-        if (calValue <= 0) {
-            Toast.makeText(this, "Calories must be greater than 0.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void addDataToFirestore(String user, String mealType, String name, String calories, String time, String notes) {
+        CollectionReference dbMeals = db.collection("FoodCollection");
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String userEmail = requireCurrentUserEmail();
-        if (userEmail == null) return;
+        FoodLog foodLog = new FoodLog(user, mealType, name, calories, time, notes);
 
-        dbHelper.ensureUserExists(userEmail);
-
-        long result = FoodLogTable.insert(db, userEmail, mealType, name, calValue, timestamp, notes);
-
-        if (result == -1) {
-            Toast.makeText(this, "Failed to save meal.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        renderStoredMeals();
-        clearInputs();
-        Toast.makeText(this, "Meal saved.", Toast.LENGTH_SHORT).show();
+        dbMeals.add(foodLog)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(FoodActivity.this, "Meal saved to Cloud", Toast.LENGTH_SHORT).show();
+                    clearInputs();
+                    renderStoredMeals(); // Refresh the list
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(FoodActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void clearInputs() {
@@ -173,38 +177,34 @@ public class FoodActivity extends AppCompatActivity {
     }
 
     private void renderStoredMeals() {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        String userEmail = requireCurrentUserEmail();
-        if (userEmail == null) return;
+        db.collection("FoodCollection")
+                .whereEqualTo("fl_USER", userEmail) // Note: Firestore is case-sensitive, ensure this matches FoodLog variable names
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    StringBuilder builder = new StringBuilder();
 
-        Cursor cursor = FoodLogTable.getLogsForUser(db, userEmail);
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        FoodLog log = document.toObject(FoodLog.class);
 
-        StringBuilder builder = new StringBuilder();
-        if (cursor != null) {
-            int mealTypeIndex = cursor.getColumnIndex(FoodLogTable.COL_MEAL_TYPE);
-            int mealNameIndex = cursor.getColumnIndex(FoodLogTable.COL_MEAL_NAME);
-            int caloriesIndex = cursor.getColumnIndex(FoodLogTable.COL_CALORIES);
-            int timeIndex = cursor.getColumnIndex(FoodLogTable.COL_TIME);
+                        builder.append("• ")
+                                .append(log.getFL_MEAL_TYPE())
+                                .append(" - ")
+                                .append(log.getFL_MEAL_NAME())
+                                .append(" (")
+                                .append(log.getFL_CALORIES())
+                                .append(" kcal at ")
+                                .append(log.getFL_TIME())
+                                .append(")\n");
+                    }
 
-            while (cursor.moveToNext()) {
-                String mealType = cursor.getString(mealTypeIndex);
-                String mealName = cursor.getString(mealNameIndex);
-                int calories = cursor.getInt(caloriesIndex);
-                String time = cursor.getString(timeIndex);
-
-                builder.append("• ")
-                        .append(mealType)
-                        .append(" - ")
-                        .append(mealName)
-                        .append(" (")
-                        .append(calories)
-                        .append(" kcal at ")
-                        .append(time)
-                        .append(")\n");
-            }
-            cursor.close();
-        }
-
-        tvMealList.setText(builder.length() == 0 ? "No meals logged yet." : builder.toString());
+                    if (builder.length() == 0) {
+                        tvMealList.setText("No meals logged yet.");
+                    } else {
+                        tvMealList.setText(builder.toString());
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    tvMealList.setText("Failed to load data: " + e.getMessage());
+                });
     }
 }

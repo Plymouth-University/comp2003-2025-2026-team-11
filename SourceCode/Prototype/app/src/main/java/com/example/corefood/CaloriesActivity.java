@@ -11,12 +11,19 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class CaloriesActivity extends AppCompatActivity {
 
     private EditText etDailyTarget;
     private TextView tvConsumed, tvBurned, tvNet, tvNotes;
     private HealthDataManager healthDataManager;
+    private FirebaseFirestore db;
+    private String userEmail;
 
     private String requireCurrentUserEmail() {
         String email = UserSessionManager.getCurrentUserEmail();
@@ -37,8 +44,20 @@ public class CaloriesActivity extends AppCompatActivity {
         String userEmail = requireCurrentUserEmail();
         if (userEmail == null) return;
 
-        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(userEmail);
-        renderTotals(summary, target);
+        // Call the new Firestore asynchronous method
+        healthDataManager.getTodaySummaryForUser(userEmail, new HealthDataManager.SummaryCallback() {
+            @Override
+            public void onSummaryLoaded(int consumed, int burned) {
+                // Once data is returned from Firestore, update the UI
+                CalorieSummary summary = new CalorieSummary(consumed, burned);
+                renderTotals(summary, target);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Toast.makeText(CaloriesActivity.this, "Error fetching cloud data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -47,6 +66,15 @@ public class CaloriesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_calories);
 
         healthDataManager = new HealthDataManager(this);
+
+        db = FirebaseFirestore.getInstance();
+
+        userEmail = UserSessionManager.getCurrentUserEmail();
+        if (userEmail == null) {
+            Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         etDailyTarget = findViewById(R.id.etDailyTarget);
         tvConsumed = findViewById(R.id.tvConsumed);
@@ -120,10 +148,36 @@ public class CaloriesActivity extends AppCompatActivity {
     }
 
     private void resetDay() {
-        etDailyTarget.setText("");
-        refreshFromData(null);
-        tvNotes.setText("Daily target cleared. Today's logs are still saved.");
-        Toast.makeText(this, "Daily target cleared.", Toast.LENGTH_SHORT).show();
+        // 1. Delete all Food logs for this user from Firestore
+        db.collection("FoodCollection")
+                .whereEqualTo("FL_USER", userEmail) // Use FL_USER to match FoodLog field
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        doc.getReference().delete();
+                    }
+
+                    // 2. Delete all Exercise logs for this user from Firestore
+                    db.collection("ExerciseCollection")
+                            .whereEqualTo("EL_USER", userEmail) // Use EL_USER to match ExerciseLog field
+                            .get()
+                            .addOnSuccessListener(exerciseSnapshots -> {
+                                for (com.google.firebase.firestore.QueryDocumentSnapshot doc : exerciseSnapshots) {
+                                    doc.getReference().delete();
+                                }
+
+                                // 3. Reset UI state
+                                etDailyTarget.setText("");
+
+                                // FIX: Create a new CalorieSummary object instead of passing 0, 0
+                                CalorieSummary emptySummary = new CalorieSummary(0, 0);
+                                renderTotals(emptySummary, null);
+
+                                tvNotes.setText("Daily target and cloud logs have been reset.");
+                                Toast.makeText(CaloriesActivity.this, "Daily logs have been reset.", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to reset: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void renderTotals(CalorieSummary summary, Integer target) {

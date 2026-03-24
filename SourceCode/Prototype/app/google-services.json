@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "96429470754",
-    "project_id": "corefood-single-task",
-    "storage_bucket": "corefood-single-task.firebasestorage.app"
+    "project_number": "704289705631",
+    "project_id": "test-553c3",
+    "storage_bucket": "test-553c3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:96429470754:android:e2d9e326836d1da703467b",
+        "mobilesdk_app_id": "1:704289705631:android:ef680d5e31cdd7a0229caa",
         "android_client_info": {
           "package_name": "com.example.corefood"
         }
@@ -15,7 +15,64 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBlAH3vq8TwqBUD7vi0iqK0u0ifnRUxh2Q"
+          "current_key": "AIzaSyA815wVpLKhxcrcVRFuH8aROJtaax9cgIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:704289705631:android:75bcb01b7320fd5e229caa",
+        "android_client_info": {
+          "package_name": "com.example.cybersecuritytest2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA815wVpLKhxcrcVRFuH8aROJtaax9cgIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:704289705631:android:c9a7b143b40057af229caa",
+        "android_client_info": {
+          "package_name": "com.example.firebaseproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA815wVpLKhxcrcVRFuH8aROJtaax9cgIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:704289705631:android:7fe85685f36a1aad229caa",
+        "android_client_info": {
+          "package_name": "com.example.firestoredatabasetest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA815wVpLKhxcrcVRFuH8aROJtaax9cgIQ"
         }
       ],
       "services": {

@@ -101,21 +101,30 @@ public class ChatBotActivity extends AppCompatActivity {
             return;
         }
 
-        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(currentUserEmail);
+        // Fixed the syntax error where the comment was merging with the code
+        healthDataManager.getTodaySummaryForUser(currentUserEmail, new HealthDataManager.SummaryCallback() {
+            @Override
+            public void onSummaryLoaded(int consumed, int burned) {
+                // Ensure UI updates happen on the main thread (Firestore callbacks usually do,
+                // but it's good practice when updating text based on async results)
+                CalorieSummary summary = new CalorieSummary(consumed, burned);
+                tvContext.setText(
+                        "Today: Consumed " + summary.getConsumed() +
+                                " kcal • Burned " + summary.getBurned() +
+                                " kcal • Net " + summary.getNet() + " kcal"
+                );
+            }
 
-        tvContext.setText(
-                "Today: Consumed " + summary.getConsumed() +
-                        " kcal • Burned " + summary.getBurned() +
-                        " kcal • Net " + summary.getNet() + " kcal"
-        );
+            @Override
+            public void onError(Exception e) {
+                tvContext.setText("Today: Data unavailable");
+            }
+        });
     }
 
     private void sendMessage() {
         String userMsg = etMessage.getText().toString().trim();
-        if (TextUtils.isEmpty(userMsg)) {
-            return;
-        }
-
+        if (TextUtils.isEmpty(userMsg)) return;
         if (TextUtils.isEmpty(currentUserEmail)) {
             Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_SHORT).show();
             return;
@@ -125,30 +134,39 @@ public class ChatBotActivity extends AppCompatActivity {
         etMessage.setText("");
         setSendingState(true);
 
-        String prompt = buildPrompt(userMsg);
-
-        GeminiApiHelper.generateReply(prompt, new GeminiApiHelper.GeminiCallback() {
+        // CHANGE: Fetch today's data first, then trigger the AI logic
+        healthDataManager.getTodaySummaryForUser(currentUserEmail, new HealthDataManager.SummaryCallback() {
             @Override
-            public void onSuccess(String reply) {
-                runOnUiThread(() -> {
-                    appendLine("AI: " + reply);
-                    setSendingState(false);
+            public void onSummaryLoaded(int consumed, int burned) {
+                CalorieSummary summary = new CalorieSummary(consumed, burned);
+                String prompt = buildPrompt(userMsg, summary); // Pass summary as argument
+
+                GeminiApiHelper.generateReply(prompt, new GeminiApiHelper.GeminiCallback() {
+                    @Override
+                    public void onSuccess(String reply) {
+                        runOnUiThread(() -> {
+                            appendLine("AI: " + reply);
+                            setSendingState(false);
+                        });
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        runOnUiThread(() -> {
+                            // Pass summary to prototype generator as well
+                            String fallbackReply = generatePrototypeReply(userMsg, summary);
+                            appendLine("AI: " + fallbackReply);
+                            setSendingState(false);
+                            Toast.makeText(ChatBotActivity.this, "AI unavailable. Showing prototype response.", Toast.LENGTH_SHORT).show();
+                        });
+                    }
                 });
             }
 
             @Override
             public void onError(Exception e) {
-                runOnUiThread(() -> {
-                    String fallbackReply = generatePrototypeReply(userMsg);
-                    appendLine("AI: " + fallbackReply);
-                    setSendingState(false);
-
-                    Toast.makeText(
-                            ChatBotActivity.this,
-                            "AI unavailable. Showing prototype response.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
+                appendLine("AI: Sorry, I am having trouble accessing your health data right now.");
+                setSendingState(false);
             }
         });
     }
@@ -176,9 +194,7 @@ public class ChatBotActivity extends AppCompatActivity {
         });
     }
 
-    private String buildPrompt(String userMsg) {
-        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(currentUserEmail);
-
+    private String buildPrompt(String userMsg, CalorieSummary summary) {
         String transcriptSnapshot = tvTranscript.getText().toString();
         if (transcriptSnapshot.length() > 800) {
             transcriptSnapshot = transcriptSnapshot.substring(transcriptSnapshot.length() - 800);
@@ -204,8 +220,7 @@ public class ChatBotActivity extends AppCompatActivity {
                 + userMsg;
     }
 
-    private String generatePrototypeReply(String userMsg) {
-        CalorieSummary summary = healthDataManager.getTodaySummaryForUser(currentUserEmail);
+    private String generatePrototypeReply(String userMsg, CalorieSummary summary) {
         int burned = summary.getBurned();
         int net = summary.getNet();
 

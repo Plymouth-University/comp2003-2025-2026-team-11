@@ -19,12 +19,19 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+
 public class ExerciseActivity extends AppCompatActivity {
 
     private Spinner spExerciseType, spIntensity;
     private EditText etDuration, etExerciseTime, etExerciseNotes;
     private TextView tvExerciseList;
     private DatabaseHelper dbHelper;
+    private FirebaseFirestore db;
+    private String userEmail;
 
     private static final DateTimeFormatter STORAGE_DATE_TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -44,6 +51,15 @@ public class ExerciseActivity extends AppCompatActivity {
         setContentView(R.layout.activity_exercise);
 
         dbHelper = new DatabaseHelper(this);
+
+        db = FirebaseFirestore.getInstance();
+
+        userEmail = UserSessionManager.getCurrentUserEmail();
+        if (userEmail == null) {
+            Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         spExerciseType = findViewById(R.id.spExerciseType);
         spIntensity = findViewById(R.id.spIntensity);
@@ -134,94 +150,64 @@ public class ExerciseActivity extends AppCompatActivity {
         String type = spExerciseType.getSelectedItem().toString();
         String intensity = spIntensity.getSelectedItem().toString();
         String durationStr = etDuration.getText().toString().trim();
+        String time = etExerciseTime.getText().toString().trim();
         String notes = etExerciseNotes.getText().toString().trim();
-        String timestamp = getCurrentTimestamp();
 
-        if (TextUtils.isEmpty(durationStr)) {
-            Toast.makeText(this, "Please fill in duration.", Toast.LENGTH_SHORT).show();
+        if (TextUtils.isEmpty(durationStr) || TextUtils.isEmpty(time)) {
+            Toast.makeText(this, "Please fill in duration and time.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int duration;
-        try {
-            duration = Integer.parseInt(durationStr);
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Duration must be a number.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (duration <= 0) {
-            Toast.makeText(this, "Duration must be greater than 0.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+        int duration = Integer.parseInt(durationStr);
         int caloriesBurned = CalorieCalculator.estimateExerciseCalories(type, intensity, duration);
 
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String userEmail = requireCurrentUserEmail();
-        if (userEmail == null) return;
+        addDataToFirestore(userEmail, type, intensity, durationStr,
+                String.valueOf(caloriesBurned), time, notes);
+    }
 
-        dbHelper.ensureUserExists(userEmail);
+    private void addDataToFirestore(String user, String type, String intensity, String duration, String calories, String time, String notes) {
+        CollectionReference dbExercises = db.collection("ExerciseCollection");
 
-        long result = ExerciseLogTable.insert(
-                db,
-                userEmail,
-                type,
-                intensity,
-                duration,
-                caloriesBurned,
-                timestamp,
-                notes
-        );
+        ExerciseLog exerciseLog = new ExerciseLog(user, type, intensity, duration, calories, time, notes);
 
-        if (result == -1) {
-            Toast.makeText(this, "Failed to save exercise.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        renderStoredExercises();
-        clearInputs();
-        Toast.makeText(this, "Exercise saved.", Toast.LENGTH_SHORT).show();
+        dbExercises.add(exerciseLog)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(ExerciseActivity.this, "Exercise saved to Cloud", Toast.LENGTH_SHORT).show();
+                    clearInputs();
+                    renderStoredExercises(); // Refresh the list
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(ExerciseActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void renderStoredExercises() {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        String userEmail = requireCurrentUserEmail();
-        if (userEmail == null) return;
+        db.collection("ExerciseCollection")
+                .whereEqualTo("el_USER", userEmail)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    StringBuilder builder = new StringBuilder();
 
-        Cursor cursor = ExerciseLogTable.getLogsForUser(db, userEmail);
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        ExerciseLog log = document.toObject(ExerciseLog.class);
 
-        StringBuilder builder = new StringBuilder();
-        if (cursor != null) {
-            int typeIndex = cursor.getColumnIndex(ExerciseLogTable.COL_EXERCISE_TYPE);
-            int intensityIndex = cursor.getColumnIndex(ExerciseLogTable.COL_INTENSITY);
-            int durationIndex = cursor.getColumnIndex(ExerciseLogTable.COL_DURATION_MINS);
-            int calsIndex = cursor.getColumnIndex(ExerciseLogTable.COL_CALORIES_BURNED);
-            int timeIndex = cursor.getColumnIndex(ExerciseLogTable.COL_TIME);
+                        builder.append("• ")
+                                .append(log.getEL_EXERCISE_TYPE()).append(" (")
+                                .append(log.getEl_INTENSITY()).append(") - ")
+                                .append(log.getEL_DURATION_MINS()).append(" mins at ")
+                                .append(log.getEL_TIME())
+                                .append(" | ~").append(log.getEL_CALORIES_BURNED()).append(" kcal\n");
+                    }
 
-            while (cursor.moveToNext()) {
-                String type = cursor.getString(typeIndex);
-                String intensity = cursor.getString(intensityIndex);
-                int duration = cursor.getInt(durationIndex);
-                int cals = cursor.getInt(calsIndex);
-                String time = cursor.getString(timeIndex);
-
-                builder.append("• ")
-                        .append(type)
-                        .append(" (")
-                        .append(intensity)
-                        .append(") - ")
-                        .append(duration)
-                        .append(" mins at ")
-                        .append(time)
-                        .append(" | ~")
-                        .append(cals)
-                        .append(" kcal\n");
-            }
-            cursor.close();
-        }
-
-        tvExerciseList.setText(builder.length() == 0 ? "No exercises logged yet." : builder.toString());
+                    if (builder.length() == 0) {
+                        tvExerciseList.setText("No exercises logged yet.");
+                    } else {
+                        tvExerciseList.setText(builder.toString());
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    tvExerciseList.setText("Failed to load data: " + e.getMessage());
+                });
     }
 
     private void clearInputs() {
