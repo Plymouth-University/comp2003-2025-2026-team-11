@@ -1,7 +1,6 @@
 package com.example.corefood;
 
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
 import java.time.LocalDate;

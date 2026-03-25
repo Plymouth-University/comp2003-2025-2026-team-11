@@ -1,8 +1,6 @@
 package com.example.corefood;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.ArrayAdapter;
@@ -29,7 +27,6 @@ public class ExerciseActivity extends AppCompatActivity {
     private Spinner spExerciseType, spIntensity;
     private EditText etDuration, etExerciseTime, etExerciseNotes;
     private TextView tvExerciseList;
-    private DatabaseHelper dbHelper;
     private FirebaseFirestore db;
     private String userEmail;
 
@@ -50,7 +47,6 @@ public class ExerciseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_exercise);
 
-        dbHelper = new DatabaseHelper(this);
 
         db = FirebaseFirestore.getInstance();
 
