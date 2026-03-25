@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -14,9 +14,50 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CoreFood">
+
+        <activity
+            android:name=".Login"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".Signup"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ForumPage"
+            android:exported="false" />
+
+        <activity
+            android:name=".UploadForumPage"
+            android:exported="false" />
+
+        <activity
+            android:name=".AnswerPage"
+            android:theme="@style/Theme.App.AnswerPopUp" />
+
+        <activity
+            android:name=".ProfilePage"
+            android:exported="false" />
+        <activity
+            android:name=".SettingsPage"
+            android:exported="false" />
+
+        <activity
+            android:name=".TrainerApplicationPage"
+            android:exported="false" />
+        <activity
+            android:name=".TrainerInstructionsPage"
+            android:exported="false" />
+
         <activity
             android:name=".ChatBotActivity"
             android:exported="false" />
@@ -29,18 +70,7 @@
         <activity
             android:name=".FoodActivity"
             android:exported="false" />
-        <activity
-            android:name=".Signup"
-            android:exported="false" />
-        <activity
-            android:name=".Login"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
     </application>
 
 </manifest>

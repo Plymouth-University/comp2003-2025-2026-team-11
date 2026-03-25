@@ -2,18 +2,29 @@ package com.example.corefood
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.example.corefood.R
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomNav: BottomNavigationView
+    private lateinit var profileImage: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+
+        //Profile Picture Setup
+        profileImage = findViewById<ImageView?>(R.id.profile_image)
+        findViewById<View?>(R.id.profile_image).setOnClickListener(View.OnClickListener { v: View? ->
+            startActivity(
+                Intent(this, ProfilePage::class.java)
+            )
+        })
 
         bottomNav = findViewById(R.id.bottom_navigation)
 
@@ -25,9 +36,6 @@ class MainActivity : AppCompatActivity() {
                 .commit()
         }
 
-        //Handle the intent if the activity is being created for the first time
-        handleIncomingIntent(intent)
-
         bottomNav.setOnItemSelectedListener { item ->
             handleNavigation(item.itemId)
             true
@@ -38,26 +46,19 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent) // Update the activity intent
-        handleIncomingIntent(intent)
-    }
 
-    private fun handleIncomingIntent(intent: Intent?) {
-        val shouldOpenSettings = intent?.getBooleanExtra("OPEN_SETTINGS", false) ?: false
-        if (shouldOpenSettings) {
-            // Force the UI to show Settings
-            bottomNav.selectedItemId = R.id.nav_settings
-            loadFragment(SettingsFragment())
-        } else {
-            bottomNav.selectedItemId = R.id.nav_main
-            loadFragment(DashboardFragment())
-        }
+        // Update the navigation bar selection to Dashboard
+        bottomNav.selectedItemId = R.id.nav_main
+
+        // Ensure the Dashboard fragment is loaded
+        loadFragment(DashboardFragment())
     }
 
     // Links the Menu IDs to my specific Fragment classes (this swaps between screens on the bottom taskbar)
     private fun handleNavigation(itemId: Int) {
         when (itemId) {
             R.id.nav_main -> loadFragment(DashboardFragment())
-            R.id.nav_settings -> loadFragment(SettingsFragment())
+            R.id.nav_forum -> startActivity(Intent(this, ForumPage::class.java))
             R.id.nav_exercises -> startActivity(Intent(this, ExerciseActivity::class.java))
             R.id.nav_calories -> startActivity(Intent(this, CaloriesActivity::class.java))
             R.id.nav_food -> startActivity(Intent(this, FoodActivity::class.java))

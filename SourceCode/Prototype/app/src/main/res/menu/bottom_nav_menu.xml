@@ -1,8 +1,31 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/nav_main" android:title="Main" android:icon="@android:drawable/ic_menu_today" />
-    <item android:id="@+id/nav_exercises" android:title="Exercises" android:icon="@android:drawable/ic_menu_directions" />
-    <item android:id="@+id/nav_calories" android:title="Calories" android:icon="@android:drawable/ic_menu_set_as" />
-    <item android:id="@+id/nav_food" android:title="Food" android:icon="@android:drawable/ic_menu_gallery" />
-    <item android:id="@+id/nav_settings" android:title="Settings" android:icon="@android:drawable/ic_menu_preferences" />
-    <item android:id="@+id/ai_menu" android:title="AI Menu" android:icon="@android:drawable/ic_menu_preferences" />
+    <item
+        android:id="@+id/nav_main"
+        android:title="Main"
+        android:icon="@drawable/home_nav_icon" />
+
+    <item
+        android:id="@+id/nav_exercises"
+        android:title="Exercises"
+        android:icon="@drawable/exercise_nav_icon" />
+
+    <item
+        android:id="@+id/nav_food"
+        android:title="Food"
+        android:icon="@drawable/food_nav_icon" />
+
+    <item
+        android:id="@+id/nav_calories"
+        android:title="Calories"
+        android:icon="@drawable/calories_nav_bar" />
+
+    <item
+        android:id="@+id/nav_forum"
+        android:title="Forum"
+        android:icon="@drawable/forum_nav_icon" />
+
+    <item
+        android:id="@+id/ai_menu"
+        android:title="AI Menu"
+        android:icon="@android:drawable/ic_menu_help" />
 </menu>

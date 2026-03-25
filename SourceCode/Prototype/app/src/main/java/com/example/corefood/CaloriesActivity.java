@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ public class CaloriesActivity extends AppCompatActivity {
     private HealthDataManager healthDataManager;
     private FirebaseFirestore db;
     private String userEmail;
+    private ImageView profileImage;
 
     private String requireCurrentUserEmail() {
         String email = UserSessionManager.getCurrentUserEmail();
@@ -99,11 +101,8 @@ public class CaloriesActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_food) {
                 startActivity(new Intent(this, FoodActivity.class));
                 return true;
-            } else if (itemId == R.id.nav_settings) {
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.putExtra("OPEN_SETTINGS", true);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
+            } else if (itemId == R.id.nav_forum) {
+                startActivity(new Intent(this, ForumPage.class));
                 return true;
             } else if (itemId == R.id.ai_menu) {
                 startActivity(new Intent(this, ChatBotActivity.class));
@@ -113,6 +112,11 @@ public class CaloriesActivity extends AppCompatActivity {
             }
             return false;
         });
+
+        //Profile Picture Setup
+        profileImage = findViewById(R.id.profile_image);
+        findViewById(R.id.profile_image).setOnClickListener(v ->
+                startActivity(new Intent(this, ProfilePage.class)));
 
         Button btnRecalculate = findViewById(R.id.btnRecalculate);
         Button btnResetDay = findViewById(R.id.btnResetDay);
