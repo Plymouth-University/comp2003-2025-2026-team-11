@@ -22,6 +22,9 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 public class ExerciseActivity extends AppCompatActivity {
 
@@ -153,8 +156,21 @@ public class ExerciseActivity extends AppCompatActivity {
         String time = etExerciseTime.getText().toString().trim();
         String notes = etExerciseNotes.getText().toString().trim();
 
+        Pattern p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE);
+
+        Matcher DU = p.matcher(durationStr);
+        Matcher NO = p.matcher(notes);
+
+        boolean res1 = DU.find();
+        boolean res2 = NO.find();
+
         if (TextUtils.isEmpty(durationStr) || TextUtils.isEmpty(time)) {
             Toast.makeText(this, "Please fill in duration and time.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (res1 || res2) {
+            Toast.makeText(this, "Invalid characters in input fields.", Toast.LENGTH_SHORT).show();
             return;
         }
 
