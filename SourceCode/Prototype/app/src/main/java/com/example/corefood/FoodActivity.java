@@ -23,6 +23,9 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class FoodActivity extends AppCompatActivity {
 
     private EditText etMealName, etCalories, etTime, etNotes;
@@ -143,8 +146,23 @@ public class FoodActivity extends AppCompatActivity {
         String mealType = spMealType.getSelectedItem().toString();
         String timestamp = etTime.getText().toString().trim();
 
+        Pattern p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE);
+
+        Matcher NA = p.matcher(name);
+        Matcher CA = p.matcher(caloriesStr);
+        Matcher NO = p.matcher(notes);
+
+        boolean res1 = NA.find();
+        boolean res2 = CA.find();
+        boolean res3 = NO.find();
+
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(caloriesStr)) {
             Toast.makeText(this, "Please fill in meal name and calories.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (res1 || res2 || res3) {
+            Toast.makeText(this, "Invalid characters in input fields.", Toast.LENGTH_SHORT).show();
             return;
         }
 
