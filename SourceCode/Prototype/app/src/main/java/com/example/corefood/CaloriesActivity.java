@@ -153,7 +153,7 @@ public class CaloriesActivity extends AppCompatActivity {
 
     private void resetDay() {
         db.collection("FoodCollection")
-                .whereEqualTo("FL_USER", userEmail)
+                .whereEqualTo("fl_USER", userEmail)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
@@ -161,7 +161,7 @@ public class CaloriesActivity extends AppCompatActivity {
                     }
 
                     db.collection("ExerciseCollection")
-                            .whereEqualTo("EL_USER", userEmail)
+                            .whereEqualTo("el_USER", userEmail)
                             .get()
                             .addOnSuccessListener(exerciseSnapshots -> {
                                 for (com.google.firebase.firestore.QueryDocumentSnapshot doc : exerciseSnapshots) {
