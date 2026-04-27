@@ -152,28 +152,24 @@ public class CaloriesActivity extends AppCompatActivity {
     }
 
     private void resetDay() {
-        // 1. Delete all Food logs for this user from Firestore
         db.collection("FoodCollection")
-                .whereEqualTo("FL_USER", userEmail) // Use FL_USER to match FoodLog field
+                .whereEqualTo("FL_USER", userEmail)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (com.google.firebase.firestore.QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference().delete();
                     }
 
-                    // 2. Delete all Exercise logs for this user from Firestore
                     db.collection("ExerciseCollection")
-                            .whereEqualTo("EL_USER", userEmail) // Use EL_USER to match ExerciseLog field
+                            .whereEqualTo("EL_USER", userEmail)
                             .get()
                             .addOnSuccessListener(exerciseSnapshots -> {
                                 for (com.google.firebase.firestore.QueryDocumentSnapshot doc : exerciseSnapshots) {
                                     doc.getReference().delete();
                                 }
 
-                                // 3. Reset UI state
                                 etDailyTarget.setText("");
 
-                                // FIX: Create a new CalorieSummary object instead of passing 0, 0
                                 CalorieSummary emptySummary = new CalorieSummary(0, 0);
                                 renderTotals(emptySummary, null);
 
