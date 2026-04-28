@@ -9,23 +9,23 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation">
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
                 android:text="Calories Summary"
                 android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:paddingBottom="8dp" />
+                android:textSize="26sp"
+                android:paddingBottom="8dp"/>
 
             <TextView
                 android:layout_width="match_parent"
@@ -37,84 +37,131 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Daily calorie target (kcal)" />
+                android:text="DAILY CALORIE TARGET (KCAL)"
+                android:textColor="#03DAC5"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
-            <EditText
-                android:id="@+id/etDailyTarget"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:hint="e.g., 2000"
-                android:inputType="number"
-                android:padding="12dp" />
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="15dp"
+                app:strokeColor="#03DAC5"
+                app:strokeWidth="1.5dp">
+
+                <EditText
+                    android:id="@+id/etDailyTarget"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    android:hint="e.g., 2000"
+                    android:inputType="number"
+                    android:padding="14dp"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#66FFFFFF" />
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Today’s totals"
+                android:text="TODAY'S TOTALS"
+                android:textColor="#03DAC5"
+                android:textSize="12sp"
                 android:textStyle="bold"
-                android:paddingTop="18dp"
-                android:paddingBottom="8dp" />
+                android:paddingTop="18dp" />
 
-            <TextView
-                android:id="@+id/tvConsumed"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Calories consumed: 0 kcal"
-                android:padding="10dp" />
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="20dp"
+                app:strokeColor="#03DAC5"
+                app:strokeWidth="1.5dp">
 
-            <TextView
-                android:id="@+id/tvBurned"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Calories burned (estimated): 0 kcal"
-                android:padding="10dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="10dp">
 
-            <TextView
-                android:id="@+id/tvNet"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Net balance: 0 kcal"
-                android:textStyle="bold"
-                android:padding="10dp" />
+                    <TextView
+                        android:id="@+id/tvConsumed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        android:text="Calories consumed: 0 kcal"
+                        android:padding="10dp" />
+
+                    <TextView
+                        android:id="@+id/tvBurned"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        android:text="Calories burned (estimated): 0 kcal"
+                        android:padding="10dp" />
+
+                    <TextView
+                        android:id="@+id/tvNet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        android:text="Net balance: 0 kcal"
+                        android:textStyle="bold"
+                        android:padding="10dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <Button
                 android:id="@+id/btnRecalculate"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:layout_marginTop="14dp"
-                android:text="Recalculate" />
+                android:layout_height="55dp"
+                android:layout_marginTop="24dp"
+                android:backgroundTint="#03DAC5"
+                android:text="Recalculate"
+                android:textColor="#121212"
+                android:textStyle="bold"
+                app:cornerRadius="25dp" />
 
             <Button
                 android:id="@+id/btnResetDay"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="55dp"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#2A2A2A"
+                android:text="Reset Day"
                 android:textColor="#FFFFFF"
-                android:layout_marginTop="10dp"
-                android:text="Reset Day" />
+                app:cornerRadius="25dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Notes"
-                android:textColor="#FFFFFF"
+                android:text="NOTES"
+                android:textColor="#03DAC5"
+                android:textSize="12sp"
                 android:textStyle="bold"
-                android:paddingTop="18dp"
-                android:paddingBottom="6dp" />
+                android:paddingTop="32dp" />
 
-            <TextView
-                android:id="@+id/tvNotes"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:text="Tip: log your meals and exercises first, then return here to see your day’s overview."
-                android:padding="12dp" />
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="20dp"
+                app:strokeColor="#03DAC5"
+                app:strokeWidth="1.5dp">
+
+                <TextView
+                    android:id="@+id/tvNotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#B3FFFFFF"
+                    android:text="Tip: log your meals and exercises first, then return here to see your day’s overview."
+                    android:padding="16dp" />
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>
@@ -146,10 +193,10 @@
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:menu="@menu/bottom_nav_menu"
         app:backgroundTint="#1F1F1F"
         app:itemIconTint="#03DAC5"
-        app:itemTextColor="#FFFFFF" />
+        app:itemTextColor="#FFFFFF"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:menu="@menu/bottom_nav_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
