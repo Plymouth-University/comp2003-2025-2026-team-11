@@ -29,6 +29,7 @@ public class Signup extends AppCompatActivity {
     private TextInputEditText firstNameInput;
     private TextInputEditText lastNameInput;
     private Button signupButton;
+    private Button loginButton;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
@@ -51,6 +52,15 @@ public class Signup extends AppCompatActivity {
         firstNameInput = findViewById(R.id.edit_first_name);
         lastNameInput = findViewById(R.id.edit_last_name);
         signupButton = findViewById(R.id.button_register);
+        loginButton = findViewById(R.id.button_login);
+
+        loginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Signup.this, Login.class);
+                startActivity(intent);
+            }
+        });
 
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override

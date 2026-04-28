@@ -52,10 +52,12 @@ public class FoodActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_food);
 
-        //Profile Picture Setup
+        //Profile Picture Setup - Added null check to prevent crash
         profileImage = findViewById(R.id.profile_image);
-        findViewById(R.id.profile_image).setOnClickListener(v ->
-                startActivity(new Intent(this, ProfilePage.class)));
+        if (profileImage != null) {
+            profileImage.setOnClickListener(v ->
+                    startActivity(new Intent(this, ProfilePage.class)));
+        }
 
         db = FirebaseFirestore.getInstance();
 
@@ -118,11 +120,13 @@ public class FoodActivity extends AppCompatActivity {
 
     private void setupMealTypeSpinner() {
         String[] mealTypes = {"Breakfast", "Lunch", "Dinner", "Snack"};
+        // Updated to use your custom R.layout.spinner_item for white text
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                R.layout.spinner_item,
                 mealTypes
         );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spMealType.setAdapter(adapter);
     }
 
@@ -195,7 +199,7 @@ public class FoodActivity extends AppCompatActivity {
 
     private void renderStoredMeals() {
         db.collection("FoodCollection")
-                .whereEqualTo("fl_USER", userEmail) // Note: Firestore is case-sensitive, ensure this matches FoodLog variable names
+                .whereEqualTo("fl_USER", userEmail)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     StringBuilder builder = new StringBuilder();

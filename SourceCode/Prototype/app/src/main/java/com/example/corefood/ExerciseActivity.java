@@ -54,8 +54,10 @@ public class ExerciseActivity extends AppCompatActivity {
 
         //Profile Picture Setup
         profileImage = findViewById(R.id.profile_image);
-        findViewById(R.id.profile_image).setOnClickListener(v ->
-                startActivity(new Intent(this, ProfilePage.class)));
+        if (profileImage != null) {
+            profileImage.setOnClickListener(v ->
+                    startActivity(new Intent(this, ProfilePage.class)));
+        }
 
 
         db = FirebaseFirestore.getInstance();
@@ -121,18 +123,21 @@ public class ExerciseActivity extends AppCompatActivity {
         String[] exerciseTypes = {"Walking", "Running", "Cycling", "Weight Training", "Swimming", "Yoga", "HIIT", "Other"};
         String[] intensityLevels = {"Low", "Medium", "High"};
 
+        // Updated to use your custom layout for white text
         ArrayAdapter<String> typeAdapter = new ArrayAdapter<>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                R.layout.spinner_item, // Use your custom XML here
                 exerciseTypes
         );
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spExerciseType.setAdapter(typeAdapter);
 
         ArrayAdapter<String> intensityAdapter = new ArrayAdapter<>(
                 this,
-                android.R.layout.simple_spinner_dropdown_item,
+                R.layout.spinner_item, // Use your custom XML here
                 intensityLevels
         );
+        intensityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spIntensity.setAdapter(intensityAdapter);
     }
 
@@ -174,11 +179,15 @@ public class ExerciseActivity extends AppCompatActivity {
             return;
         }
 
-        int duration = Integer.parseInt(durationStr);
-        int caloriesBurned = CalorieCalculator.estimateExerciseCalories(type, intensity, duration);
+        try {
+            int duration = Integer.parseInt(durationStr);
+            int caloriesBurned = CalorieCalculator.estimateExerciseCalories(type, intensity, duration);
 
-        addDataToFirestore(userEmail, type, intensity, durationStr,
-                String.valueOf(caloriesBurned), time, notes);
+            addDataToFirestore(userEmail, type, intensity, durationStr,
+                    String.valueOf(caloriesBurned), time, notes);
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Please enter a valid number for duration.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void addDataToFirestore(String user, String type, String intensity, String duration, String calories, String time, String notes) {
@@ -190,7 +199,7 @@ public class ExerciseActivity extends AppCompatActivity {
                 .addOnSuccessListener(documentReference -> {
                     Toast.makeText(ExerciseActivity.this, "Exercise saved to Cloud", Toast.LENGTH_SHORT).show();
                     clearInputs();
-                    renderStoredExercises(); // Refresh the list
+                    renderStoredExercises();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(ExerciseActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
