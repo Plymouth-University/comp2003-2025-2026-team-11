@@ -88,7 +88,7 @@ public class ForumPage extends AppCompatActivity {
             }
         });
 
-        loadPosts("Progress");
+        loadPosts("All");
 
         findViewById(R.id.fab_add_post).setOnClickListener(v ->
                 startActivity(new Intent(this, UploadForumPage.class)));
