@@ -81,14 +81,19 @@ public class ForumPage extends AppCompatActivity {
 
         //Category Groups
         RadioGroup categoryGroup = findViewById(R.id.category_group);
+
+        // Ensure no button is selected visually
+        categoryGroup.clearCheck();
+
+        // Call all posts immediately
+        loadPosts("All");
+
         categoryGroup.setOnCheckedChangeListener((group, checkedId) -> {
             RadioButton rb = findViewById(checkedId);
             if (rb != null) {
                 loadPosts(rb.getText().toString());
             }
         });
-
-        loadPosts("All");
 
         findViewById(R.id.fab_add_post).setOnClickListener(v ->
                 startActivity(new Intent(this, UploadForumPage.class)));
