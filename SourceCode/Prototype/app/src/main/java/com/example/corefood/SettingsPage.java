@@ -6,12 +6,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Base64;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -19,12 +21,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -120,6 +129,11 @@ public class SettingsPage extends AppCompatActivity {
             startActivity(intent);
         });
 
+        //Delete Account Button
+        findViewById(R.id.btn_delete_account).setOnClickListener(v -> {
+            showReauthDialog();
+        });
+
         //Password Reset
         findViewById(R.id.btn_change_password).setOnClickListener(v -> {
             String email = currentUser.getEmail();
@@ -136,6 +150,129 @@ public class SettingsPage extends AppCompatActivity {
         });
 
         listenToTrainerStatus();
+    }
+
+    private void showReauthDialog() {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
+
+        //Set Window Appearance
+        android.text.SpannableString title = new android.text.SpannableString("DELETE ACCOUNT");
+        title.setSpan(new android.text.style.ForegroundColorSpan(android.graphics.Color.parseColor("#03DAC5")), 0, title.length(), 0);
+        title.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, title.length(), 0);
+        builder.setTitle(title);
+
+        android.text.SpannableString message = new android.text.SpannableString("Please enter your password to permanently delete your account.");
+        message.setSpan(new android.text.style.ForegroundColorSpan(Color.WHITE), 0, message.length(), 0);
+        builder.setMessage(message);
+
+        final EditText passwordInput = new EditText(this);
+        passwordInput.setHint("Password");
+        passwordInput.setTransformationMethod(PasswordTransformationMethod.getInstance());
+        passwordInput.setTextColor(Color.WHITE);
+        passwordInput.setHintTextColor(Color.GRAY);
+
+        FrameLayout container = new FrameLayout(this);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.leftMargin = 50; params.rightMargin = 50;
+        passwordInput.setLayoutParams(params);
+        container.addView(passwordInput);
+        builder.setView(container);
+
+        builder.setPositiveButton("Delete", (dialog, which) -> {
+            String password = passwordInput.getText().toString();
+            if (!password.isEmpty()) {
+                reauthenticateAndProcess(password);
+            } else {
+                Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Button Styling
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#FF1744"));
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.parseColor("#FFFFFF"));
+
+        // Window Appearance
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        View decorView = dialog.getWindow().getDecorView();
+        if (decorView instanceof ViewGroup) {
+            View child = ((ViewGroup) decorView).getChildAt(0);
+            child.setBackgroundColor(Color.parseColor("#1A1A1A"));
+        }
+    }
+
+    private void reauthenticateAndProcess(String password) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null && user.getEmail() != null) {
+            AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
+            user.reauthenticate(credential).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    deleteUserAccount();
+                } else {
+                    Toast.makeText(this, "Verification failed. Check password.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void deleteUserAccount() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+
+        WriteBatch batch = db.batch();
+
+        //Delete main user profile
+        batch.delete(db.collection("users").document(userId));
+
+        //Delete the linked posts/food/exercises by the user
+        List<com.google.android.gms.tasks.Task<QuerySnapshot>> tasks = new ArrayList<>();
+
+        tasks.add(db.collection("posts").whereEqualTo("userId", userId).get());
+        tasks.add(db.collection("FoodCollection").whereEqualTo("userId", userId).get());
+        tasks.add(db.collection("ExerciseCollection").whereEqualTo("userId", userId).get());
+
+        //Wait for all queries to complete, even if some return 0 results
+        com.google.android.gms.tasks.Tasks.whenAllComplete(tasks).addOnCompleteListener(allTasks -> {
+            for (com.google.android.gms.tasks.Task<?> t : tasks) {
+                if (t.isSuccessful()) {
+                    QuerySnapshot snap = (QuerySnapshot) t.getResult();
+                    if (snap != null) {
+                        for (DocumentSnapshot doc : snap) {
+                            batch.delete(doc.getReference());
+                        }
+                    }
+                }
+            }
+
+            //Commit the deletes
+            executeBatchAndAuthDelete(batch, user);
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Error syncing with database: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void executeBatchAndAuthDelete(WriteBatch batch, FirebaseUser user) {
+        batch.commit().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                //Delete the actual login credentials
+                user.delete().addOnCompleteListener(authTask -> {
+                    if (authTask.isSuccessful()) {
+                        Toast.makeText(this, "Your account has successfully been deleted.", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(this, Login.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                    } else {
+                        //Security check: If they haven't logged in recently, this will fail.
+                        Toast.makeText(this, "Your Data has been wiped, but please re-login to delete account credentials.", Toast.LENGTH_LONG).show();
+                    }
+                });
+            } else {
+                Toast.makeText(this, "Failed to delete associated data.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void initViews() {
