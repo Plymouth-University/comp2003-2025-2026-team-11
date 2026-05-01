@@ -1,6 +1,7 @@
 package com.example.corefood;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
@@ -16,6 +17,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class ChatBotActivity extends AppCompatActivity {
 
+    private static final String CHAT_PREFS = "CoreFoodsChatPrefs";
+    private static final String CHAT_TRANSCRIPT_KEY = "chatTranscript";
+
     private TextView tvContext;
     private TextView tvTranscript;
     private EditText etMessage;
@@ -30,9 +34,9 @@ public class ChatBotActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_bot);
 
-        //Profile Picture Setup
+        // Profile Picture Setup
         profileImage = findViewById(R.id.profile_image);
-        findViewById(R.id.profile_image).setOnClickListener(v ->
+        profileImage.setOnClickListener(v ->
                 startActivity(new Intent(this, ProfilePage.class)));
 
         healthDataManager = new HealthDataManager(this);
@@ -42,12 +46,11 @@ public class ChatBotActivity extends AppCompatActivity {
         etMessage = findViewById(R.id.etMessage);
         btnSend = findViewById(R.id.btnSend);
 
-        tvTranscript.setMovementMethod(new ScrollingMovementMethod());
-        tvTranscript.setText(buildAiBlock(
-                "Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
-        ));
-
         currentUserEmail = resolveCurrentUserEmail();
+
+        tvTranscript.setMovementMethod(new ScrollingMovementMethod());
+        loadChatTranscript();
+
         setupBottomNavigation();
         refreshContext();
 
@@ -59,6 +62,7 @@ public class ChatBotActivity extends AppCompatActivity {
         super.onResume();
         currentUserEmail = resolveCurrentUserEmail();
         refreshContext();
+        loadChatTranscript();
     }
 
     private void setupBottomNavigation() {
@@ -95,11 +99,13 @@ public class ChatBotActivity extends AppCompatActivity {
 
     private String resolveCurrentUserEmail() {
         String email = healthDataManager.getCurrentUserEmail();
+
         if (TextUtils.isEmpty(email)) {
             Toast.makeText(this, "No logged-in user found. Please log in again.", Toast.LENGTH_LONG).show();
             finish();
             return null;
         }
+
         return email;
     }
 
@@ -112,6 +118,7 @@ public class ChatBotActivity extends AppCompatActivity {
             @Override
             public void onSummaryLoaded(int consumed, int burned) {
                 CalorieSummary summary = new CalorieSummary(consumed, burned);
+
                 tvContext.setText(
                         "Today: Consumed " + summary.getConsumed() +
                                 " kcal • Burned " + summary.getBurned() +
@@ -128,7 +135,10 @@ public class ChatBotActivity extends AppCompatActivity {
 
     private void sendMessage() {
         String userMsg = etMessage.getText().toString().trim();
-        if (TextUtils.isEmpty(userMsg)) return;
+
+        if (TextUtils.isEmpty(userMsg)) {
+            return;
+        }
 
         if (TextUtils.isEmpty(currentUserEmail)) {
             Toast.makeText(this, "No logged-in user found.", Toast.LENGTH_SHORT).show();
@@ -160,6 +170,7 @@ public class ChatBotActivity extends AppCompatActivity {
                             String fallbackReply = generatePrototypeReply(userMsg, summary);
                             appendBlock(buildAiBlock(fallbackReply));
                             setSendingState(false);
+
                             Toast.makeText(
                                     ChatBotActivity.this,
                                     "AI unavailable. Showing prototype response.",
@@ -172,10 +183,12 @@ public class ChatBotActivity extends AppCompatActivity {
 
             @Override
             public void onError(Exception e) {
-                appendBlock(buildAiBlock(
-                        "Sorry, I am having trouble accessing your health data right now."
-                ));
-                setSendingState(false);
+                runOnUiThread(() -> {
+                    appendBlock(buildAiBlock(
+                            "Sorry, I am having trouble accessing your health data right now."
+                    ));
+                    setSendingState(false);
+                });
             }
         });
     }
@@ -202,6 +215,11 @@ public class ChatBotActivity extends AppCompatActivity {
             tvTranscript.append("\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" + block);
         }
 
+        saveChatTranscript();
+        scrollTranscriptToLatestMessage();
+    }
+
+    private void scrollTranscriptToLatestMessage() {
         tvTranscript.post(() -> {
             if (tvTranscript.getLayout() == null) {
                 return;
@@ -211,8 +229,7 @@ public class ChatBotActivity extends AppCompatActivity {
             int viewHeight = tvTranscript.getHeight();
 
             int scrollAmount = contentHeight - viewHeight;
-
-            int topPaddingOffset = 120; // leaves a little more context visible above the latest reply
+            int topPaddingOffset = 120;
 
             if (scrollAmount > 0) {
                 tvTranscript.scrollTo(0, Math.max(scrollAmount - topPaddingOffset, 0));
@@ -222,8 +239,48 @@ public class ChatBotActivity extends AppCompatActivity {
         });
     }
 
+    private void saveChatTranscript() {
+        if (TextUtils.isEmpty(currentUserEmail)) {
+            return;
+        }
+
+        SharedPreferences prefs = getSharedPreferences(CHAT_PREFS, MODE_PRIVATE);
+
+        prefs.edit()
+                .putString(
+                        CHAT_TRANSCRIPT_KEY + "_" + currentUserEmail,
+                        tvTranscript.getText().toString()
+                )
+                .apply();
+    }
+
+    private void loadChatTranscript() {
+        if (TextUtils.isEmpty(currentUserEmail)) {
+            return;
+        }
+
+        SharedPreferences prefs = getSharedPreferences(CHAT_PREFS, MODE_PRIVATE);
+
+        String savedTranscript = prefs.getString(
+                CHAT_TRANSCRIPT_KEY + "_" + currentUserEmail,
+                ""
+        );
+
+        if (TextUtils.isEmpty(savedTranscript)) {
+            tvTranscript.setText(buildAiBlock(
+                    "Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
+            ));
+            saveChatTranscript();
+        } else {
+            tvTranscript.setText(savedTranscript);
+        }
+
+        scrollTranscriptToLatestMessage();
+    }
+
     private String buildPrompt(String userMsg, CalorieSummary summary) {
         String transcriptSnapshot = tvTranscript.getText().toString();
+
         if (transcriptSnapshot.length() > 1200) {
             transcriptSnapshot = transcriptSnapshot.substring(transcriptSnapshot.length() - 1200);
         }

@@ -19,7 +19,7 @@ public class GeminiApiHelper {
         void onError(Exception e);
     }
 
-    private static final String API_KEY = "COREFOODS API KEY";// Should be replaced with the Gemini API key
+    private static final String API_KEY = "AIzaSyCXd1lsae5svv_MAMyZn9dELm0xVBKN72A";// Should be replaced with the Gemini API key
 
     private static final String[] MODEL_CHAIN = new String[]{
             "gemini-3.1-flash-lite-preview",
