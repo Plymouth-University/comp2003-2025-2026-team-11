@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -143,6 +144,10 @@ public class FoodActivity extends AppCompatActivity {
         return LocalDateTime.now().format(STORAGE_DATE_TIME_FORMAT);
     }
 
+    private String getTodayDatePrefix() {
+        return LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+    }
+
     private void saveMeal() {
         String name = etMealName.getText().toString().trim();
         String caloriesStr = etCalories.getText().toString().trim();
@@ -198,6 +203,8 @@ public class FoodActivity extends AppCompatActivity {
     }
 
     private void renderStoredMeals() {
+        String todayDatePrefix = getTodayDatePrefix();
+
         db.collection("FoodCollection")
                 .whereEqualTo("fl_USER", userEmail)
                 .get()
@@ -206,6 +213,12 @@ public class FoodActivity extends AppCompatActivity {
 
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         FoodLog log = document.toObject(FoodLog.class);
+
+                        String logTime = log.getFL_TIME();
+
+                        if (logTime == null || !logTime.startsWith(todayDatePrefix)) {
+                            continue;
+                        }
 
                         builder.append("• ")
                                 .append(log.getFL_MEAL_TYPE())
@@ -219,7 +232,7 @@ public class FoodActivity extends AppCompatActivity {
                     }
 
                     if (builder.length() == 0) {
-                        tvMealList.setText("No meals logged yet.");
+                        tvMealList.setText("No meals logged today.");
                     } else {
                         tvMealList.setText(builder.toString());
                     }

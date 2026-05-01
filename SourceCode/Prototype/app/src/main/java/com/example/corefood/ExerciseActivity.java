@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -154,6 +155,10 @@ public class ExerciseActivity extends AppCompatActivity {
         return LocalDateTime.now().format(STORAGE_DATE_TIME_FORMAT);
     }
 
+    private String getTodayDatePrefix() {
+        return LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+    }
+
     private void saveExercise() {
         String type = spExerciseType.getSelectedItem().toString();
         String intensity = spIntensity.getSelectedItem().toString();
@@ -207,6 +212,8 @@ public class ExerciseActivity extends AppCompatActivity {
     }
 
     private void renderStoredExercises() {
+        String todayDatePrefix = getTodayDatePrefix();
+
         db.collection("ExerciseCollection")
                 .whereEqualTo("el_USER", userEmail)
                 .get()
@@ -215,6 +222,12 @@ public class ExerciseActivity extends AppCompatActivity {
 
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         ExerciseLog log = document.toObject(ExerciseLog.class);
+
+                        String logTime = log.getEL_TIME();
+
+                        if (logTime == null || !logTime.startsWith(todayDatePrefix)) {
+                            continue;
+                        }
 
                         builder.append("• ")
                                 .append(log.getEL_EXERCISE_TYPE()).append(" (")
@@ -225,7 +238,7 @@ public class ExerciseActivity extends AppCompatActivity {
                     }
 
                     if (builder.length() == 0) {
-                        tvExerciseList.setText("No exercises logged yet.");
+                        tvExerciseList.setText("No exercises logged today.");
                     } else {
                         tvExerciseList.setText(builder.toString());
                     }
