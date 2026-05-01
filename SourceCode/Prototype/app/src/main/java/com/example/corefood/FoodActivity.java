@@ -159,18 +159,16 @@ public class FoodActivity extends AppCompatActivity {
 
         Matcher NA = p.matcher(name);
         Matcher CA = p.matcher(caloriesStr);
-        Matcher NO = p.matcher(notes);
 
         boolean res1 = NA.find();
         boolean res2 = CA.find();
-        boolean res3 = NO.find();
 
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(caloriesStr)) {
             Toast.makeText(this, "Please fill in meal name and calories.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (res1 || res2 || res3) {
+        if (res1 || res2) {
             Toast.makeText(this, "Invalid characters in input fields.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -228,7 +226,12 @@ public class FoodActivity extends AppCompatActivity {
                                 .append(log.getFL_CALORIES())
                                 .append(" kcal at ")
                                 .append(log.getFL_TIME())
-                                .append(")\n");
+                                .append(")");
+
+                        if (log.getFL_NOTES() != null && !log.getFL_NOTES().isEmpty()) {
+                            builder.append("\n  Notes: ").append(log.getFL_NOTES());
+                        }
+                        builder.append("\n");
                     }
 
                     if (builder.length() == 0) {

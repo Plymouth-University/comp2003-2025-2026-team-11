@@ -169,17 +169,15 @@ public class ExerciseActivity extends AppCompatActivity {
         Pattern p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE);
 
         Matcher DU = p.matcher(durationStr);
-        Matcher NO = p.matcher(notes);
 
         boolean res1 = DU.find();
-        boolean res2 = NO.find();
 
         if (TextUtils.isEmpty(durationStr) || TextUtils.isEmpty(time)) {
             Toast.makeText(this, "Please fill in duration and time.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (res1 || res2) {
+        if (res1) {
             Toast.makeText(this, "Invalid characters in input fields.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -234,7 +232,12 @@ public class ExerciseActivity extends AppCompatActivity {
                                 .append(log.getEl_INTENSITY()).append(") - ")
                                 .append(log.getEL_DURATION_MINS()).append(" mins at ")
                                 .append(log.getEL_TIME())
-                                .append(" | ~").append(log.getEL_CALORIES_BURNED()).append(" kcal\n");
+                                .append(" | ~").append(log.getEL_CALORIES_BURNED()).append(" kcal");
+
+                        if (log.getEL_NOTES() != null && !log.getEL_NOTES().isEmpty()) {
+                            builder.append("\n  Notes: ").append(log.getEL_NOTES());
+                        }
+                        builder.append("\n");
                     }
 
                     if (builder.length() == 0) {
