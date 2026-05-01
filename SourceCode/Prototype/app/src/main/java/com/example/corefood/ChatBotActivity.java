@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -24,6 +25,7 @@ public class ChatBotActivity extends AppCompatActivity {
     private TextView tvTranscript;
     private EditText etMessage;
     private Button btnSend;
+    private Button btnClearChat;
 
     private HealthDataManager healthDataManager;
     private String currentUserEmail;
@@ -45,6 +47,7 @@ public class ChatBotActivity extends AppCompatActivity {
         tvTranscript = findViewById(R.id.tvChatTranscript);
         etMessage = findViewById(R.id.etMessage);
         btnSend = findViewById(R.id.btnSend);
+        btnClearChat = findViewById(R.id.btnClearChat);
 
         currentUserEmail = resolveCurrentUserEmail();
 
@@ -55,6 +58,7 @@ public class ChatBotActivity extends AppCompatActivity {
         refreshContext();
 
         btnSend.setOnClickListener(v -> sendMessage());
+        btnClearChat.setOnClickListener(v -> confirmClearChat());
     }
 
     @Override
@@ -195,6 +199,7 @@ public class ChatBotActivity extends AppCompatActivity {
 
     private void setSendingState(boolean isSending) {
         btnSend.setEnabled(!isSending);
+        btnClearChat.setEnabled(!isSending);
         btnSend.setText(isSending ? "Sending..." : "Send");
     }
 
@@ -267,15 +272,66 @@ public class ChatBotActivity extends AppCompatActivity {
         );
 
         if (TextUtils.isEmpty(savedTranscript)) {
-            tvTranscript.setText(buildAiBlock(
-                    "Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
-            ));
+            tvTranscript.setText(getDefaultWelcomeMessage());
             saveChatTranscript();
         } else {
             tvTranscript.setText(savedTranscript);
         }
 
         scrollTranscriptToLatestMessage();
+    }
+
+    private void confirmClearChat() {
+        new AlertDialog.Builder(this)
+                .setTitle("Clear chat?")
+                .setMessage("This will remove the saved chatbot conversation for this account on this device.")
+                .setPositiveButton("Clear", (dialog, which) -> clearChatTranscript())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void clearChatTranscript() {
+        if (TextUtils.isEmpty(currentUserEmail)) {
+            return;
+        }
+
+        clearChatForUser(currentUserEmail);
+
+        tvTranscript.setText(getDefaultWelcomeMessage());
+        saveChatTranscript();
+        scrollTranscriptToLatestMessage();
+
+        Toast.makeText(this, "Chat cleared.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void clearChatForUser(String email) {
+        if (TextUtils.isEmpty(email)) {
+            return;
+        }
+
+        SharedPreferences prefs = getSharedPreferences(CHAT_PREFS, MODE_PRIVATE);
+
+        prefs.edit()
+                .remove(CHAT_TRANSCRIPT_KEY + "_" + email)
+                .apply();
+    }
+
+    private String getDefaultWelcomeMessage() {
+        return buildAiBlock(
+                "Hi! I’m your CoreFoods assistant. Ask me about calories, meals, exercise, or your progress today."
+        );
+    }
+
+    public static void clearSavedChatForUser(android.content.Context context, String email) {
+        if (context == null || TextUtils.isEmpty(email)) {
+            return;
+        }
+
+        SharedPreferences prefs = context.getSharedPreferences(CHAT_PREFS, MODE_PRIVATE);
+
+        prefs.edit()
+                .remove(CHAT_TRANSCRIPT_KEY + "_" + email)
+                .apply();
     }
 
     private String buildPrompt(String userMsg, CalorieSummary summary) {

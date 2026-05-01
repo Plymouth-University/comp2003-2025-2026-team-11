@@ -120,6 +120,19 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClearChat"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="#2A2A2A"
+                android:text="Clear Chat"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                app:cornerRadius="18dp"
+                app:strokeColor="#55FFFFFF"
+                app:strokeWidth="1dp" />
+
             <TextView
                 android:id="@+id/tvChatDisclaimer"
                 android:layout_width="match_parent"

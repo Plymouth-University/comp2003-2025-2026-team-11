@@ -123,7 +123,14 @@ public class SettingsPage extends AppCompatActivity {
 
         //Logout Button
         findViewById(R.id.btn_logout).setOnClickListener(v -> {
+            FirebaseUser user = mAuth.getCurrentUser();
+
+            if (user != null && user.getEmail() != null) {
+                ChatBotActivity.clearSavedChatForUser(this, user.getEmail());
+            }
+
             mAuth.signOut();
+
             Intent intent = new Intent(this, Login.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -260,7 +267,12 @@ public class SettingsPage extends AppCompatActivity {
                 //Delete the actual login credentials
                 user.delete().addOnCompleteListener(authTask -> {
                     if (authTask.isSuccessful()) {
+                        if (user.getEmail() != null) {
+                            ChatBotActivity.clearSavedChatForUser(this, user.getEmail());
+                        }
+
                         Toast.makeText(this, "Your account has successfully been deleted.", Toast.LENGTH_SHORT).show();
+
                         Intent intent = new Intent(this, Login.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
