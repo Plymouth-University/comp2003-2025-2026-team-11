@@ -237,9 +237,14 @@ public class SettingsPage extends AppCompatActivity {
         //Delete the linked posts/food/exercises by the user
         List<com.google.android.gms.tasks.Task<QuerySnapshot>> tasks = new ArrayList<>();
 
+        String email = user.getEmail();
+
         tasks.add(db.collection("posts").whereEqualTo("userId", userId).get());
-        tasks.add(db.collection("FoodCollection").whereEqualTo("userId", userId).get());
-        tasks.add(db.collection("ExerciseCollection").whereEqualTo("userId", userId).get());
+
+        if (email != null) {
+            tasks.add(db.collection("FoodCollection").whereEqualTo("fl_USER", email).get());
+            tasks.add(db.collection("ExerciseCollection").whereEqualTo("el_USER", email).get());
+        }
 
         //Wait for all queries to complete, even if some return 0 results
         com.google.android.gms.tasks.Tasks.whenAllComplete(tasks).addOnCompleteListener(allTasks -> {
